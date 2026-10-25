@@ -5,8 +5,8 @@
 use gstreamer as gst;
 use gstreamer_app as gst_app;
 
+use crate::uplink::{Counters, RTP_HEADER_LEN, UplinkCodec, seal_packet, to_wire_pcm};
 use gst::prelude::*;
-use livi_audio_uplink::{Counters, RTP_HEADER_LEN, UplinkCodec, seal_packet, to_wire_pcm};
 use std::net::{IpAddr, SocketAddr, SocketAddrV6, UdpSocket};
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -335,7 +335,7 @@ impl Drop for SocketTap {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use livi_audio_uplink::UplinkCodec;
+    use crate::uplink::UplinkCodec;
 
     const NASTY: &str = "AppleUSBAudioEngine:Unknown Manufacturer:USB PnP Audio Device:131200:1";
 

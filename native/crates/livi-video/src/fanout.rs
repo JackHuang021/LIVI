@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Additional terms: see NOTICE
 
-use livi_video_nal::{CpCodec, CpNalKind, classify_nal};
+//! Per-receiver frame gating and GOP cache. The caller owns the planes and does
+//! the pushing; this decides what is worth pushing.
+
+use crate::nal::{CpCodec, CpNalKind, classify_nal};
 
 pub const CACHE_MAX: usize = 240;
 

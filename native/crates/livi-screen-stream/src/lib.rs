@@ -3,7 +3,7 @@
 // Additional terms: see NOTICE
 
 use livi_crypto::open;
-use livi_video_nal::{CpCodec, detect_codec};
+use livi_video::nal::{CpCodec, detect_codec};
 
 pub const HEADER_LEN: usize = 128;
 const OP_VIDEO_FRAME: u8 = 0;

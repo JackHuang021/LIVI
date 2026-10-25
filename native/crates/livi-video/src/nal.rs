@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Additional terms: see NOTICE
 
+//! Codec detection and NAL classification for the CarPlay screen stream.
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum CpCodec {
     H264 = 0,

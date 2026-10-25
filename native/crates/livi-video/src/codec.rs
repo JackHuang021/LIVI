@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Additional terms: see NOTICE
 
+//! Which parser, decoder and caps a codec gets. The candidates come out best
+//! first; the caller takes the first one the GStreamer registry knows.
+
 use core::ffi::CStr;
 
 const H264: &CStr = c"h264";
