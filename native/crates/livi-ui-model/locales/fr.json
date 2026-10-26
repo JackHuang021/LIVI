@@ -127,6 +127,7 @@
     "german": "Allemand",
     "ukrainian": "Ukrainien",
     "french": "Français",
+    "chinese": "Chinois",
     "fullscreen": "Plein écran",
     "uiZoom": "Zoom de l'UI",
     "audio": "Audio",
@@ -310,7 +311,8 @@
     "dabGain": "Gain",
     "moveUp": "Monter",
     "moveDown": "Descendre",
-    "dabPpm": "Correction de fréquence"
+    "dabPpm": "Correction de fréquence",
+    "apply": "Appliquer"
   },
   "softwareUpdate": {
     "channelNightly": "Nightly",
@@ -328,7 +330,13 @@
     "restartsAutomaticallyWhenDone": "Redémarrage auto en fin de màj.",
     "abort": "Annuler",
     "installNow": "Installer Maintenant",
-    "close": "Fermer"
+    "close": "Fermer",
+    "downloading": "Téléchargement",
+    "readyToInstall": "Prêt à installer",
+    "installing": "Installation",
+    "relaunching": "Redémarrage",
+    "error": "Erreur",
+    "starting": "Démarrage…"
   },
   "media": {
     "source": "Source",
@@ -338,6 +346,17 @@
     "favorite": "Favori",
     "noStations": "Aucune station, lancez la recherche dans Réglages > Général > DAB+",
     "hideStation": "Masquer la station",
-    "showStation": "Afficher la station"
+    "showStation": "Afficher la station",
+    "noArtwork": "Pas de pochette"
+  },
+  "camera": {
+    "noCamera": "Aucune caméra détectée"
+  },
+  "dashboard": {
+    "gear": "RAPPORT",
+    "noDashboard": "Aucun tableau de bord sur cet écran"
+  },
+  "secondary": {
+    "noContent": "Aucun contenu sur cet écran"
   }
 }

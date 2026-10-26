@@ -193,6 +193,7 @@ pub fn set_texts(ui: &AppWindow, tr: impl Fn(&str, &str) -> String) {
     t.set_phone_source(tr("media.phoneSource", "Phone").into());
     t.set_dab_source(tr("media.dabSource", "DAB+").into());
     t.set_no_stations(tr("media.noStations", "No stations yet").into());
+    t.set_no_artwork(tr("media.noArtwork", "No Artwork").into());
 }
 
 fn flash(ui: &AppWindow, which: Pressed) {

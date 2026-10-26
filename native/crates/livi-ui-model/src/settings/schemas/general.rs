@@ -637,6 +637,10 @@ pub fn schema() -> Node {
                         Label::new("settings.french", "French"),
                         OptionValue::Text("fr"),
                     ),
+                    choice(
+                        Label::new("settings.chinese", "Chinese"),
+                        OptionValue::Text("zh"),
+                    ),
                 ],
             )
             .icon("language")

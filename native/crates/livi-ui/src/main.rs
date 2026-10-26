@@ -114,7 +114,14 @@ fn apply_look(ui: &AppWindow, look: Look) {
     ui.set_tabs(ModelRc::from(Rc::new(VecModel::from(tabs))));
     ui.set_projection_icon(tab(Tab::Projection).icon);
     settings_ui::set_language(&look.language);
+    ui.set_camera_empty(settings_ui::tr("camera.noCamera", "No camera found").into());
+    let dash = ui.global::<DashState>();
+    dash.set_gear_label(settings_ui::tr("dashboard.gear", "GEAR").into());
+    dash.set_placeholder(
+        settings_ui::tr("dashboard.noDashboard", "No dashboard on this screen").into(),
+    );
     secondary::theme(ui);
+    secondary::set_texts();
     media_ui::set_texts(ui, settings_ui::tr);
     if ZOOM.get() != look.zoom {
         ZOOM.set(look.zoom);

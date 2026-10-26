@@ -129,6 +129,7 @@
     "german": "Німецька",
     "ukrainian": "Українська",
     "french": "французька",
+    "chinese": "Китайська",
     "audio": "Аудіо",
     "media": "Медіа",
     "huVolume": "Головний пристрій",
@@ -308,7 +309,8 @@
     "dabGain": "Підсилення",
     "moveUp": "Вгору",
     "moveDown": "Вниз",
-    "dabPpm": "Корекція частоти"
+    "dabPpm": "Корекція частоти",
+    "apply": "Застосувати"
   },
   "softwareUpdate": {
     "channelNightly": "Nightly",
@@ -326,7 +328,13 @@
     "restartsAutomaticallyWhenDone": "Автоматично перезавантажується після завершення.",
     "abort": "Скасувати",
     "installNow": "Встановити зараз",
-    "close": "Закрити"
+    "close": "Закрити",
+    "downloading": "Завантаження",
+    "readyToInstall": "Готово до встановлення",
+    "installing": "Встановлення",
+    "relaunching": "Перезапуск",
+    "error": "Помилка",
+    "starting": "Запуск…"
   },
   "media": {
     "source": "Джерело",
@@ -336,6 +344,17 @@
     "favorite": "Обране",
     "noStations": "Станцій ще немає, шукайте в Налаштування > Загальні > DAB+",
     "hideStation": "Приховати станцію",
-    "showStation": "Показати станцію"
+    "showStation": "Показати станцію",
+    "noArtwork": "Немає обкладинки"
+  },
+  "camera": {
+    "noCamera": "Камеру не знайдено"
+  },
+  "dashboard": {
+    "gear": "ПЕРЕДАЧА",
+    "noDashboard": "Немає панелі приладів на цьому екрані"
+  },
+  "secondary": {
+    "noContent": "Немає вмісту на цьому екрані"
   }
 }

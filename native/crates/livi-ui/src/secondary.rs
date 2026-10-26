@@ -46,12 +46,28 @@ fn copy_theme(main: &AppWindow, w: &SecondaryWindow) {
     to.set_text_override(from.get_text_override());
 }
 
+fn apply_texts(w: &SecondaryWindow) {
+    let dash = w.global::<DashState>();
+    dash.set_gear_label(crate::settings_ui::tr("dashboard.gear", "GEAR").into());
+    dash.set_placeholder(
+        crate::settings_ui::tr("dashboard.noDashboard", "No dashboard on this screen").into(),
+    );
+    w.set_empty_label(
+        crate::settings_ui::tr("secondary.noContent", "No content on this screen").into(),
+    );
+}
+
+pub fn set_texts() {
+    OPEN.with_borrow(|open| open.iter().for_each(|o| apply_texts(&o.window)));
+}
+
 fn open(main: &AppWindow, client: &Client, spec: &Secondary) -> Option<SecondaryWindow> {
     let w = SecondaryWindow::new().ok()?;
     crate::dashboard_ui::wire(&w.global::<DashState>(), client);
     w.set_window_title(title(spec.screen).into());
     w.set_has_dashboard(spec.dashboard);
     copy_theme(main, &w);
+    apply_texts(&w);
     w.global::<DashState>()
         .set_clock(crate::clock::now_text().into());
     let window = w.window();

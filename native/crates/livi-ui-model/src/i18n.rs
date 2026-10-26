@@ -10,6 +10,7 @@ const EN: &str = include_str!("../locales/en.json");
 const DE: &str = include_str!("../locales/de.json");
 const FR: &str = include_str!("../locales/fr.json");
 const UA: &str = include_str!("../locales/ua.json");
+const ZH: &str = include_str!("../locales/zh.json");
 
 pub struct Strings {
     lang: String,
@@ -49,6 +50,7 @@ fn source(lang: &str) -> &'static str {
         "de" => DE,
         "fr" => FR,
         "ua" | "uk" => UA,
+        "zh" | "cn" => ZH,
         _ => EN,
     }
 }
@@ -109,6 +111,21 @@ mod tests {
         assert_eq!(
             Strings::new("uk-UA").t("settings.audio", "x"),
             Strings::new("ua").t("settings.audio", "x")
+        );
+        assert_eq!(
+            Strings::new("zh-CN").t("settings.audio", "x"),
+            Strings::new("zh").t("settings.audio", "x")
+        );
+    }
+
+    #[test]
+    fn chinese_is_complete() {
+        let zh = Strings::new("zh");
+        assert_eq!(zh.t("settings.audio", "x"), "音频");
+        assert_eq!(zh.t("settings.language", "x"), "语言");
+        assert_eq!(
+            zh.with("settings.pressKeyFor", "x", &[("name", "A")]),
+            "请为“A”按下按键"
         );
     }
 
