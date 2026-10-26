@@ -176,8 +176,23 @@ pub fn drop_name_bound_profiles() {
     }
 }
 
-fn link_local_profile(ifname: &str) {
+/* Armbian and other images ship disable_ipv6=1 for new interfaces. CarPlay
+ * needs the fe80 address on the phone's link to tell it where the AirPlay
+ * service listens, so enable IPv6 before the interface comes up. */
+fn enable_ipv6(ifname: &str) {
+    let _ = fs::write(
+        format!("/proc/sys/net/ipv6/conf/{ifname}/disable_ipv6"),
+        "0",
+    );
+    let _ = fs::write(
+        format!("/proc/sys/net/ipv6/conf/{ifname}/addr_gen_mode"),
+        "0",
+    );
     let _ = fs::write(format!("/proc/sys/net/ipv6/conf/{ifname}/accept_dad"), "0");
+}
+
+fn link_local_profile(ifname: &str) {
+    enable_ipv6(ifname);
     run_cmd("ip", &["link", "set", ifname, "up"]);
     let Ok(mac) = fs::read_to_string(format!("/sys/class/net/{ifname}/address")) else {
         return;
@@ -280,7 +295,7 @@ impl NcmBridge {
             run_cmd("ip", &["link", "set", &ifname, "address", mac]);
         }
         run_cmd("nmcli", &["device", "set", &ifname, "managed", "no"]);
-        let _ = fs::write(format!("/proc/sys/net/ipv6/conf/{ifname}/accept_dad"), "0");
+        enable_ipv6(&ifname);
         run_cmd("ip", &["link", "set", &ifname, "up"]);
 
         let run = Arc::new(AtomicBool::new(true));
