@@ -27,6 +27,7 @@ pub const DEV_ADDR_CANDIDATES: [u16; 2] = [0x10, 0x11];
 pub enum MfiError {
     Timeout(String),
     ChallengeSize(usize),
+    ChallengeLength { size: usize, expected: usize },
     AuthFailed { error_code: Option<u8> },
     NoChip { probed: Vec<u16> },
     Io(String),
@@ -38,6 +39,9 @@ impl core::fmt::Display for MfiError {
         match self {
             MfiError::Timeout(what) => write!(f, "timeout during {what}"),
             MfiError::ChallengeSize(n) => write!(f, "challenge must be 1..=128 bytes, got {n}"),
+            MfiError::ChallengeLength { size, expected } => {
+                write!(f, "challenge must be {expected} bytes, got {size}")
+            }
             MfiError::AuthFailed {
                 error_code: Some(c),
             } => {

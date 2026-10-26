@@ -59,3 +59,10 @@ assets/livi-link/*/*.gz
 assets/livi-link/*/*.lfwb
 assets/livi-link/*/MANIFEST.md5
 native/crates/livi-link-provision/assets/bindshell/*
+
+# MFi credentials (Apple-issued accessory identity) — never commit
+*.p7b
+*.pk8
+offline-mfi/
+!native/crates/iap2-mfi/src/testdata/*.p7b
+!native/crates/iap2-mfi/src/testdata/*.pk8

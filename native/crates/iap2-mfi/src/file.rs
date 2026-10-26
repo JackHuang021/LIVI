@@ -8,9 +8,9 @@ use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use p256::ecdsa::signature::hazmat::PrehashSigner;
 use p256::ecdsa::{Signature, SigningKey};
-use p256::pkcs8::DecodePrivateKey as _;
-use rsa::pkcs8::DecodePrivateKey as _;
-use rsa::{Pkcs1v15Sign, RsaPrivateKey};
+use p256::pkcs8::{DecodePrivateKey as _, EncodePublicKey as _};
+use rsa::pkcs8::{DecodePrivateKey as _, EncodePublicKey as _};
+use rsa::{Pkcs1v15Sign, RsaPrivateKey, RsaPublicKey};
 
 use crate::{AuthCoprocessor, CHALLENGE_MAX, CHALLENGE_MIN, MfiError};
 
@@ -21,6 +21,18 @@ const SHA1_LEN: usize = 20;
 const SHA1_PREFIX: [u8; 15] = [
     0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a, 0x05, 0x00, 0x04, 0x14,
 ];
+
+/* MFi 3.0 coprocessors sign a 32-byte digest exactly as presented
+ * (NONEwithECDSA): for /auth-setup that is SHA-256(server_pub || client_pub),
+ * and an iAP2 challenge already is the digest. Signing any other length would
+ * silently truncate or hash it a second time. */
+const EC_DIGEST_LEN: usize = 32;
+
+/* A real MFi certificate is a few hundred bytes and an EC identity is 67
+ * bytes; larger inputs are a sign that the wrong file was picked. PEM keys
+ * and RSA identities get more room than their DER form needs. */
+const MAX_CERTIFICATE_BYTES: usize = 16 * 1024;
+const MAX_IDENTITY_BYTES: usize = 4 * 1024;
 
 enum Identity {
     Ec(SigningKey),
@@ -84,11 +96,54 @@ pub fn identity_major(bytes: &[u8]) -> Result<u8, MfiError> {
     identity(bytes).map(|i| major(&i))
 }
 
+fn contains(certificate: &[u8], spki: &[u8]) -> bool {
+    certificate.windows(spki.len()).any(|w| w == spki)
+}
+
+fn matches(certificate: &[u8], identity: &Identity) -> Result<(), MfiError> {
+    let found = match identity {
+        Identity::Ec(key) => {
+            let spki = key
+                .verifying_key()
+                .to_public_key_der()
+                .map_err(|e| bad(format!("the identity has no public key: {e}")))?;
+            contains(certificate, spki.as_bytes())
+        }
+        Identity::Rsa(key) => {
+            let spki = RsaPublicKey::from(key)
+                .to_public_key_der()
+                .map_err(|e| bad(format!("the identity has no public key: {e}")))?;
+            contains(certificate, spki.as_bytes())
+        }
+    };
+    if found {
+        return Ok(());
+    }
+    Err(bad(
+        "the identity does not match the certificate (different key pair?)",
+    ))
+}
+
+fn bounded(bytes: &[u8], max: usize, what: &str) -> Result<(), MfiError> {
+    if bytes.len() <= max {
+        return Ok(());
+    }
+    Err(bad(format!(
+        "the {what} is {} bytes, over the {max} byte limit",
+        bytes.len()
+    )))
+}
+
 impl FileCoprocessor {
     pub fn from_bytes(certificate_bytes: &[u8], identity_bytes: &[u8]) -> Result<Self, MfiError> {
+        bounded(certificate_bytes, MAX_CERTIFICATE_BYTES, "certificate")?;
+        bounded(identity_bytes, MAX_IDENTITY_BYTES, "identity")?;
+        let certificate = certificate(certificate_bytes)?;
+        let identity = identity(identity_bytes)?;
+        matches(&certificate, &identity)?;
         Ok(Self {
-            certificate: certificate(certificate_bytes)?,
-            identity: identity(identity_bytes)?,
+            certificate,
+            identity,
         })
     }
 
@@ -114,6 +169,12 @@ impl AuthCoprocessor for FileCoprocessor {
         }
         match &self.identity {
             Identity::Ec(key) => {
+                if challenge.len() != EC_DIGEST_LEN {
+                    return Err(MfiError::ChallengeLength {
+                        size: challenge.len(),
+                        expected: EC_DIGEST_LEN,
+                    });
+                }
                 let signature: Signature = key
                     .sign_prehash(challenge)
                     .map_err(|e| bad(format!("ECDSA signing failed: {e}")))?;
@@ -121,7 +182,10 @@ impl AuthCoprocessor for FileCoprocessor {
             }
             Identity::Rsa(key) => {
                 if challenge.len() != SHA1_LEN {
-                    return Err(MfiError::ChallengeSize(challenge.len()));
+                    return Err(MfiError::ChallengeLength {
+                        size: challenge.len(),
+                        expected: SHA1_LEN,
+                    });
                 }
                 let scheme = Pkcs1v15Sign {
                     hash_len: Some(SHA1_LEN),
@@ -138,7 +202,6 @@ impl AuthCoprocessor for FileCoprocessor {
 mod tests {
     use p256::ecdsa::VerifyingKey;
     use p256::ecdsa::signature::hazmat::PrehashVerifier;
-    use rsa::RsaPublicKey;
 
     use super::*;
 
@@ -147,6 +210,7 @@ mod tests {
     const RSA_PEM: &str = include_str!("testdata/rsa-1024.pk8.pem");
     const CERT_PEM: &str = include_str!("testdata/certificate.p7b.pem");
     const CERT_DER: &[u8] = include_bytes!("testdata/certificate.p7b");
+    const RSA_CERT_DER: &[u8] = include_bytes!("testdata/certificate-rsa.p7b");
 
     #[test]
     fn pem_and_der_give_the_same_certificate() {
@@ -176,11 +240,41 @@ mod tests {
         VerifyingKey::from(&key)
             .verify_prehash(&digest, &signature)
             .unwrap();
+        for len in [31, 33] {
+            assert!(matches!(
+                chip.generate_challenge_response(&vec![0u8; len]),
+                Err(MfiError::ChallengeLength { expected, .. }) if expected == EC_DIGEST_LEN
+            ));
+        }
+    }
+
+    #[test]
+    fn the_certificate_and_identity_must_pair_up() {
+        assert!(matches!(
+            FileCoprocessor::from_bytes(CERT_DER, RSA_PEM.as_bytes()),
+            Err(MfiError::File(e)) if e.contains("does not match")
+        ));
+        assert!(FileCoprocessor::from_bytes(RSA_CERT_DER, EC_PEM.as_bytes()).is_err());
+        assert!(FileCoprocessor::from_bytes(RSA_CERT_DER, RSA_PEM.as_bytes()).is_ok());
+    }
+
+    #[test]
+    fn oversized_files_are_refused() {
+        let big = vec![0u8; MAX_CERTIFICATE_BYTES + 1];
+        assert!(matches!(
+            FileCoprocessor::from_bytes(&big, EC_DER),
+            Err(MfiError::File(e)) if e.contains("certificate")
+        ));
+        let big = vec![0u8; MAX_IDENTITY_BYTES + 1];
+        assert!(matches!(
+            FileCoprocessor::from_bytes(CERT_DER, &big),
+            Err(MfiError::File(e)) if e.contains("identity")
+        ));
     }
 
     #[test]
     fn an_rsa_identity_signs_a_sha1_digest() {
-        let mut chip = FileCoprocessor::from_bytes(CERT_DER, RSA_PEM.as_bytes()).unwrap();
+        let mut chip = FileCoprocessor::from_bytes(RSA_CERT_DER, RSA_PEM.as_bytes()).unwrap();
         assert_eq!(chip.protocol_major().unwrap(), 2);
         let digest = [9u8; SHA1_LEN];
         let signature = chip.generate_challenge_response(&digest).unwrap();
