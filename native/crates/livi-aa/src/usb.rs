@@ -22,9 +22,9 @@ use crate::session::{self, Peer};
 
 const GOOGLE_VID: u16 = 0x18d1;
 const ACCESSORY_PIDS: [u16; 6] = [0x2d00, 0x2d01, 0x2d02, 0x2d03, 0x2d04, 0x2d05];
-const PHONE_VENDORS: [u16; 16] = [
+const PHONE_VENDORS: [u16; 17] = [
     0x0489, 0x04dd, 0x04e8, 0x0b05, 0x0bb4, 0x0e8d, 0x0fce, 0x1004, 0x109b, 0x12d1, 0x17ef, 0x18d1,
-    0x19d2, 0x22b8, 0x2717, 0x2a70,
+    0x19d2, 0x22b8, 0x22d9, 0x2717, 0x2a70,
 ];
 const NON_PHONE_INTERFACE_CLASSES: [u8; 10] =
     [0x01, 0x02, 0x03, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0e, 0xe0];
@@ -133,13 +133,17 @@ fn is_accessory(info: &DeviceInfo) -> bool {
 }
 
 fn is_candidate(info: &DeviceInfo) -> bool {
-    if !PHONE_VENDORS.contains(&info.vendor_id()) {
-        return false;
-    }
-    if info.class() != 0x00 && info.class() != 0xff {
-        return false;
-    }
     let interfaces: Vec<u8> = info.interfaces().map(|i| i.class()).collect();
+    is_phone(info.vendor_id(), info.class(), &interfaces)
+}
+
+fn is_phone(vendor: u16, class: u8, interfaces: &[u8]) -> bool {
+    if !PHONE_VENDORS.contains(&vendor) {
+        return false;
+    }
+    if class != 0x00 && class != 0xff {
+        return false;
+    }
     if interfaces.contains(&WIRELESS_CONTROLLER_CLASS) {
         return false;
     }
@@ -380,5 +384,15 @@ mod tests {
     fn the_label_names_the_serial_or_falls_back() {
         assert_eq!(label("39181FDJH00276"), "usb:39181FDJH00276");
         assert_eq!(label(""), "usb:phone");
+    }
+
+    #[test]
+    fn a_oneplus_in_mtp_mode_is_a_phone_candidate() {
+        assert!(is_phone(0x22d9, 0x00, &[0x06]));
+    }
+
+    #[test]
+    fn a_wireless_controller_is_not_a_phone() {
+        assert!(!is_phone(0x22d9, 0x00, &[0x06, WIRELESS_CONTROLLER_CLASS]));
     }
 }
