@@ -13,6 +13,7 @@ const START: &str = r#"#!/bin/sh
 HERE="$(dirname "$(readlink -f "$0")")"
 [ "$1" = telemetry ] && exec "$HERE/resources/core/livi-core" "$@"
 export LIVI_RESOURCES="$HERE/resources"
+export SLINT_FONT_PATH="$HERE/resources/fonts${SLINT_FONT_PATH:+:$SLINT_FONT_PATH}"
 exec "$HERE/resources/core/livi-core"
 "#;
 
@@ -76,6 +77,11 @@ pub fn run(arch: Arch) -> Result<(), String> {
     copy_exe(
         &built("livi-compositor"),
         &res.join("compositor/livi-compositor"),
+    )?;
+
+    copy(
+        &root.join("native/crates/livi-ui/ui/fonts/NotoSansSC-LIVI.ttf"),
+        &res.join("fonts/NotoSansSC-LIVI.ttf"),
     )?;
 
     let linux = root.join("assets/linux");

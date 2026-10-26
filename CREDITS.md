@@ -64,6 +64,14 @@ Roboto is licensed under the **SIL Open Font License 1.1 (OFL-1.1)**.
 
 https://github.com/googlefonts/roboto
 
+### Noto Sans SC
+
+This application bundles a subset of the **Noto Sans SC** font (GB2312 and Big5 level 1 coverage) as a fallback for Chinese text.
+
+Noto Sans SC is licensed under the **SIL Open Font License 1.1 (OFL-1.1)**.
+
+https://github.com/notofonts/noto-cjk
+
 ### Material Icons
 
 This application bundles icons from Google's **Material Icons**.
