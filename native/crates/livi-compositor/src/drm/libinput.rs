@@ -3,6 +3,7 @@
 // Additional terms: see NOTICE
 
 use super::*;
+use smithay::reexports::input::event::touch::TouchEventSlot;
 
 pub(super) fn touch_target(
     state: &LiviState,
@@ -118,19 +119,17 @@ pub(super) fn input(state: &mut LiviState, event: InputEvent<LibinputInputBacken
             let (idx, x, y) = touch_point(state, &event.device(), |size| {
                 event.position_transformed(size)
             });
-            let id = touch_id(event.slot());
-            crate::input::touch_down(state, event.time_msec(), id, x, y, idx);
+            crate::input::touch_down(state, event.time_msec(), event.seat_slot(), x, y, idx);
         }
         InputEvent::TouchMotion { event } => {
             let (idx, x, y) = touch_point(state, &event.device(), |size| {
                 event.position_transformed(size)
             });
             let local_x = x - state.screens[idx].x as f64;
-            let id = touch_id(event.slot());
-            crate::input::touch_motion(state, event.time_msec(), id, local_x, y);
+            crate::input::touch_motion(state, event.time_msec(), event.seat_slot(), local_x, y);
         }
         InputEvent::TouchUp { event } => {
-            crate::input::touch_up(state, event.time_msec(), touch_id(event.slot()));
+            crate::input::touch_up(state, event.time_msec(), event.seat_slot());
         }
         InputEvent::TouchCancel { .. } => crate::input::touch_cancel(state),
         InputEvent::DeviceAdded { device } => device_added(state, &device),
@@ -142,10 +141,6 @@ pub(super) fn input(state: &mut LiviState, event: InputEvent<LibinputInputBacken
         }
         _ => {}
     }
-}
-
-pub(super) fn touch_id(slot: smithay::backend::input::TouchSlot) -> i32 {
-    i32::from(slot)
 }
 
 pub(super) fn key(
