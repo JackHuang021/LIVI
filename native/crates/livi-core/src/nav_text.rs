@@ -8,6 +8,7 @@ pub enum Language {
     De,
     Fr,
     Ua,
+    Zh,
 }
 
 impl Language {
@@ -16,6 +17,7 @@ impl Language {
             "de" => Self::De,
             "fr" => Self::Fr,
             "ua" | "uk" | "uk-UA" => Self::Ua,
+            "zh" | "zh-CN" | "zh-Hans" | "cn" => Self::Zh,
             _ => Self::En,
         }
     }
@@ -26,6 +28,7 @@ impl Language {
             Self::De => &DE,
             Self::Fr => &FR,
             Self::Ua => &UA,
+            Self::Zh => &ZH,
         }
     }
 }
@@ -350,6 +353,68 @@ const UA: Words = Words {
     ],
 };
 
+const ZH: Words = Words {
+    unknown: "未知",
+    no_route: "无路线",
+    roundabout_exit: "环岛出口",
+    maneuvers: [
+        "不转向",
+        "左转",
+        "右转",
+        "直行",
+        "掉头",
+        "沿当前道路继续行驶",
+        "进入环岛",
+        "驶出环岛",
+        "驶出高速",
+        "汇入高速",
+        "结束导航",
+        "驶向路线",
+        "已到达",
+        "靠左行驶",
+        "靠右行驶",
+        "进入渡轮",
+        "驶出渡轮",
+        "换乘渡轮",
+        "掉头返回路线",
+        "通过环岛掉头",
+        "道路尽头左转",
+        "道路尽头右转",
+        "靠左驶出高速",
+        "靠右驶出高速",
+        "已到达（左侧）",
+        "已到达（右侧）",
+        "在允许时掉头",
+        "导航结束",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "急左转",
+        "急右转",
+        "稍向左转",
+        "稍向右转",
+        "变更高速",
+        "变更高速（向左）",
+        "变更高速（向右）",
+    ],
+};
+
 #[cfg(test)]
 mod tests {
     use serde_json::Value;
@@ -406,9 +471,13 @@ mod tests {
     fn the_language_setting_picks_the_words() {
         assert_eq!(Language::of("uk-UA"), Language::Ua);
         assert_eq!(Language::of("fr"), Language::Fr);
+        assert_eq!(Language::of("zh-CN"), Language::Zh);
         assert_eq!(Language::of("xx"), Language::En);
         assert_eq!(no_route(Language::De), "Zielführung aus");
         assert_eq!(maneuver(30, Language::De).as_deref(), Some("Ausfahrt 3"));
         assert_eq!(maneuver(54, Language::En), None);
+        assert_eq!(no_route(Language::Zh), "无路线");
+        assert_eq!(maneuver(1, Language::Zh).as_deref(), Some("左转"));
+        assert_eq!(maneuver(30, Language::Zh).as_deref(), Some("环岛出口 3"));
     }
 }
