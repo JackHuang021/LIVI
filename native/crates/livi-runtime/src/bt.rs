@@ -8,7 +8,7 @@ use std::os::fd::OwnedFd;
 
 use tokio::sync::mpsc;
 use zbus::Connection;
-use zbus::zvariant::{ObjectPath, OwnedObjectPath, OwnedValue, Value};
+use zbus::{ObjectPath, OwnedObjectPath, OwnedVariant, Variant};
 
 pub use crate::bluetoothd::Wireless;
 
@@ -87,8 +87,8 @@ impl Profile {
     async fn new_connection(
         &self,
         device: ObjectPath<'_>,
-        fd: zbus::zvariant::OwnedFd,
-        _options: HashMap<String, OwnedValue>,
+        fd: zbus::OwnedFd,
+        _options: HashMap<String, OwnedVariant>,
         #[zbus(connection)] conn: &Connection,
     ) -> zbus::fdo::Result<()> {
         refuse_other_adapter(device.as_str(), &self.adapter)?;
@@ -166,7 +166,7 @@ async fn controllers(conn: &Connection) -> Result<Vec<(String, Found)>, Box<dyn 
             &(),
         )
         .await?;
-    let objects: HashMap<OwnedObjectPath, HashMap<String, HashMap<String, OwnedValue>>> =
+    let objects: HashMap<OwnedObjectPath, HashMap<String, HashMap<String, OwnedVariant>>> =
         reply.body().deserialize()?;
     let mut out = Vec::new();
     for (path, interfaces) in objects {
@@ -214,12 +214,12 @@ async fn hold(conn: &Connection, adapter: &str, alias: &str) -> Held {
         }
         let path = format!("/org/bluez/{name}");
         if back.alias.is_empty()
-            && let Err(e) = set_prop(conn, &path, "Alias", Value::from("")).await
+            && let Err(e) = set_prop(conn, &path, "Alias", Variant::from("")).await
         {
             eprintln!("[bt] {name} keeps LIVI's name: {e}");
         }
         for prop in ["Discoverable", "Pairable"] {
-            if let Err(e) = set_prop(conn, &path, prop, Value::from(false)).await {
+            if let Err(e) = set_prop(conn, &path, prop, Variant::from(false)).await {
                 eprintln!("[bt] {name} could not be set {prop}=false: {e}");
             }
         }
@@ -232,13 +232,13 @@ pub async fn let_go(conn: &Connection, adapter: &str, held: &Held) {
     for (name, back) in &held.0 {
         let path = format!("/org/bluez/{name}");
         let props = [
-            ("Alias", Value::from(back.alias.as_str())),
+            ("Alias", Variant::from(back.alias.as_str())),
             (
                 "DiscoverableTimeout",
-                Value::from(back.discoverable_timeout),
+                Variant::from(back.discoverable_timeout),
             ),
-            ("Discoverable", Value::from(back.discoverable)),
-            ("Pairable", Value::from(back.pairable)),
+            ("Discoverable", Variant::from(back.discoverable)),
+            ("Pairable", Variant::from(back.pairable)),
         ];
         for (prop, value) in props {
             if let Err(e) = set_prop_within(conn, &path, prop, value, LET_GO_WAIT).await {
@@ -274,7 +274,7 @@ async fn register_profile(
     conn: &Connection,
     path: &str,
     uuid: &str,
-    options: HashMap<&str, Value<'_>>,
+    options: HashMap<&str, Variant<'_>>,
 ) -> Result<(), Box<dyn Error>> {
     let object_path = ObjectPath::try_from(path)?;
     conn.call_method(
@@ -324,13 +324,13 @@ pub async fn start(
     let adapter_path = format!("/org/bluez/{adapter}");
     wait_for_adapter(&conn, &adapter_path).await?;
     let held = hold(&conn, adapter, alias).await;
-    set_prop(&conn, &adapter_path, "Alias", Value::from(alias)).await?;
+    set_prop(&conn, &adapter_path, "Alias", Variant::from(alias)).await?;
     if wireless.any() {
         set_prop(
             &conn,
             &adapter_path,
             "DiscoverableTimeout",
-            Value::from(0u32),
+            Variant::from(0u32),
         )
         .await?;
     }
@@ -339,15 +339,15 @@ pub async fn start(
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .status();
-    set_prop(&conn, &adapter_path, "Powered", Value::from(true)).await?;
+    set_prop(&conn, &adapter_path, "Powered", Variant::from(true)).await?;
     set_prop(
         &conn,
         &adapter_path,
         "Discoverable",
-        Value::from(wireless.any()),
+        Variant::from(wireless.any()),
     )
     .await?;
-    set_prop(&conn, &adapter_path, "Pairable", Value::from(true)).await?;
+    set_prop(&conn, &adapter_path, "Pairable", Variant::from(true)).await?;
 
     Ok((conn, rx, held))
 }
@@ -386,27 +386,27 @@ async fn start_carplay(
         )
         .await?;
 
-    let mut iap_opts: HashMap<&str, Value> = HashMap::new();
-    iap_opts.insert("Role", Value::from("server"));
-    iap_opts.insert("Channel", Value::from(IAP_CHANNEL));
-    iap_opts.insert("ServiceRecord", Value::from(IAP_RECORD));
-    iap_opts.insert("RequireAuthentication", Value::from(false));
-    iap_opts.insert("RequireAuthorization", Value::from(false));
+    let mut iap_opts: HashMap<&str, Variant> = HashMap::new();
+    iap_opts.insert("Role", Variant::from("server"));
+    iap_opts.insert("Channel", Variant::from(IAP_CHANNEL));
+    iap_opts.insert("ServiceRecord", Variant::from(IAP_RECORD));
+    iap_opts.insert("RequireAuthentication", Variant::from(false));
+    iap_opts.insert("RequireAuthorization", Variant::from(false));
     register_profile(conn, IAP_SERVER_PATH, IAP_SERVER_UUID, iap_opts).await?;
 
-    let mut client_opts: HashMap<&str, Value> = HashMap::new();
-    client_opts.insert("Role", Value::from("client"));
-    client_opts.insert("AutoConnect", Value::from(true));
-    client_opts.insert("RequireAuthentication", Value::from(true));
+    let mut client_opts: HashMap<&str, Variant> = HashMap::new();
+    client_opts.insert("Role", Variant::from("client"));
+    client_opts.insert("AutoConnect", Variant::from(true));
+    client_opts.insert("RequireAuthentication", Variant::from(true));
     if let Err(e) = register_profile(conn, IAP_CLIENT_PATH, IAP_CLIENT_UUID, client_opts).await {
         eprintln!("[cp] could not register iAP client profile: {e}");
     }
 
-    let mut cp_opts: HashMap<&str, Value> = HashMap::new();
-    cp_opts.insert("Role", Value::from("server"));
-    cp_opts.insert("ServiceRecord", Value::from(CARPLAY_RECORD));
-    cp_opts.insert("RequireAuthentication", Value::from(false));
-    cp_opts.insert("RequireAuthorization", Value::from(false));
+    let mut cp_opts: HashMap<&str, Variant> = HashMap::new();
+    cp_opts.insert("Role", Variant::from("server"));
+    cp_opts.insert("ServiceRecord", Variant::from(CARPLAY_RECORD));
+    cp_opts.insert("RequireAuthentication", Variant::from(false));
+    cp_opts.insert("RequireAuthorization", Variant::from(false));
     if let Err(e) = register_profile(conn, CARPLAY_PATH, CARPLAY_SERVICE_UUID, cp_opts).await {
         eprintln!("[cp] could not publish CarPlay service UUID: {e}");
     }
@@ -440,7 +440,7 @@ async fn set_prop(
     conn: &Connection,
     path: &str,
     name: &str,
-    value: Value<'_>,
+    value: Variant<'_>,
 ) -> Result<(), Box<dyn Error>> {
     set_prop_within(conn, path, name, value, ADAPTER_WAIT).await
 }
@@ -449,7 +449,7 @@ async fn set_prop_within(
     conn: &Connection,
     path: &str,
     name: &str,
-    value: Value<'_>,
+    value: Variant<'_>,
     patience: std::time::Duration,
 ) -> Result<(), Box<dyn Error>> {
     let deadline = std::time::Instant::now() + patience;
@@ -481,7 +481,7 @@ async fn trust(conn: &Connection, device: &str) {
             device,
             Some("org.freedesktop.DBus.Properties"),
             "Set",
-            &("org.bluez.Device1", "Trusted", Value::from(true)),
+            &("org.bluez.Device1", "Trusted", Variant::from(true)),
         )
         .await;
     if let Err(e) = set {
@@ -517,12 +517,12 @@ pub async fn start_aa(
         )
         .await?;
 
-    let mut opts: HashMap<&str, Value> = HashMap::new();
-    opts.insert("Role", Value::from("server"));
-    opts.insert("Channel", Value::from(AA_CHANNEL));
-    opts.insert("ServiceRecord", Value::from(AA_RECORD));
-    opts.insert("RequireAuthentication", Value::from(false));
-    opts.insert("RequireAuthorization", Value::from(false));
+    let mut opts: HashMap<&str, Variant> = HashMap::new();
+    opts.insert("Role", Variant::from("server"));
+    opts.insert("Channel", Variant::from(AA_CHANNEL));
+    opts.insert("ServiceRecord", Variant::from(AA_RECORD));
+    opts.insert("RequireAuthentication", Variant::from(false));
+    opts.insert("RequireAuthorization", Variant::from(false));
     register_profile(conn, AA_PATH, AA_UUID, opts).await?;
     println!("[aa] profile registered (RFCOMM ch {AA_CHANNEL})");
     Ok(rx)
@@ -543,8 +543,8 @@ impl HfpProfile {
     fn new_connection(
         &self,
         device: ObjectPath<'_>,
-        fd: zbus::zvariant::OwnedFd,
-        _options: HashMap<String, OwnedValue>,
+        fd: zbus::OwnedFd,
+        _options: HashMap<String, OwnedVariant>,
     ) -> zbus::fdo::Result<()> {
         refuse_other_adapter(device.as_str(), &self.adapter)?;
         let mac = mac_from_device_path(device.as_str());
@@ -572,13 +572,13 @@ pub async fn start_hfp(
             },
         )
         .await?;
-    let mut opts: HashMap<&str, Value> = HashMap::new();
-    opts.insert("Name", Value::from("HFP Hands-Free"));
-    opts.insert("Role", Value::from("client"));
-    opts.insert("RequireAuthentication", Value::from(true));
-    opts.insert("RequireAuthorization", Value::from(false));
-    opts.insert("Features", Value::from(0x009cu16));
-    opts.insert("Version", Value::from(0x0108u16));
+    let mut opts: HashMap<&str, Variant> = HashMap::new();
+    opts.insert("Name", Variant::from("HFP Hands-Free"));
+    opts.insert("Role", Variant::from("client"));
+    opts.insert("RequireAuthentication", Variant::from(true));
+    opts.insert("RequireAuthorization", Variant::from(false));
+    opts.insert("Features", Variant::from(0x009cu16));
+    opts.insert("Version", Variant::from(0x0108u16));
     match register_profile(conn, HFP_PATH, HFP_HF_UUID, opts).await {
         Ok(()) => println!("[hfp] HF profile registered"),
         Err(e) => println!("[hfp] HF profile held by the audio daemon ({e})"),
@@ -619,7 +619,7 @@ pub async fn start_ble_ad(
         .at(BLE_AD_PATH, BleAd { name: name.into() })
         .await?;
     let path = format!("/org/bluez/{adapter}");
-    let opts: HashMap<&str, Value> = HashMap::new();
+    let opts: HashMap<&str, Variant> = HashMap::new();
     conn.call_method(
         Some("org.bluez"),
         path.as_str(),
@@ -775,7 +775,7 @@ impl MprisPlayer {
     }
 
     #[zbus(property, name = "Metadata")]
-    fn metadata(&self) -> HashMap<String, OwnedValue> {
+    fn metadata(&self) -> HashMap<String, OwnedVariant> {
         HashMap::new()
     }
 
@@ -847,21 +847,21 @@ pub async fn start_media_player(
         )
         .await?;
 
-    let mut props: HashMap<&str, Value> = HashMap::new();
-    props.insert("PlaybackStatus", Value::from("Playing"));
-    props.insert("LoopStatus", Value::from("None"));
-    props.insert("Rate", Value::from(1.0f64));
-    props.insert("Shuffle", Value::from(false));
-    props.insert("Volume", Value::from(1.0f64));
-    props.insert("Position", Value::from(0i64));
-    props.insert("MinimumRate", Value::from(1.0f64));
-    props.insert("MaximumRate", Value::from(1.0f64));
-    props.insert("CanGoNext", Value::from(true));
-    props.insert("CanGoPrevious", Value::from(true));
-    props.insert("CanPlay", Value::from(true));
-    props.insert("CanPause", Value::from(true));
-    props.insert("CanSeek", Value::from(false));
-    props.insert("CanControl", Value::from(true));
+    let mut props: HashMap<&str, Variant> = HashMap::new();
+    props.insert("PlaybackStatus", Variant::from("Playing"));
+    props.insert("LoopStatus", Variant::from("None"));
+    props.insert("Rate", Variant::from(1.0f64));
+    props.insert("Shuffle", Variant::from(false));
+    props.insert("Volume", Variant::from(1.0f64));
+    props.insert("Position", Variant::from(0i64));
+    props.insert("MinimumRate", Variant::from(1.0f64));
+    props.insert("MaximumRate", Variant::from(1.0f64));
+    props.insert("CanGoNext", Variant::from(true));
+    props.insert("CanGoPrevious", Variant::from(true));
+    props.insert("CanPlay", Variant::from(true));
+    props.insert("CanPause", Variant::from(true));
+    props.insert("CanSeek", Variant::from(false));
+    props.insert("CanControl", Variant::from(true));
 
     let path = format!("/org/bluez/{adapter}");
     conn.call_method(
@@ -890,7 +890,7 @@ pub async fn adapter_address(conn: &Connection, adapter: &str) -> Result<[u8; 6]
             &("org.bluez.Adapter1", "Address"),
         )
         .await?;
-    let value: OwnedValue = reply.body().deserialize()?;
+    let value: OwnedVariant = reply.body().deserialize()?;
     let addr = String::try_from(value)?;
     let mut mac = [0u8; 6];
     for (i, part) in addr.split(':').enumerate().take(6) {

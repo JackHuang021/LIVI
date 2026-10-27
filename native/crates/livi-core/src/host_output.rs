@@ -7,7 +7,7 @@ use std::path::Path;
 use std::process::Stdio;
 use std::time::Duration;
 
-use zbus::zvariant::OwnedValue;
+use zbus::OwnedVariant;
 
 use livi_core_proto::state::Display;
 
@@ -30,7 +30,7 @@ fn largest_first(sizes: impl Iterator<Item = (u32, u32)>) -> Vec<String> {
     modes.into_iter().map(|(w, h)| format!("{w}x{h}")).collect()
 }
 
-type Props = HashMap<String, OwnedValue>;
+type Props = HashMap<String, OwnedVariant>;
 type MutterMode = (String, i32, i32, f64, f64, Vec<f64>, Props);
 type MutterMonitor = ((String, String, String, String), Vec<MutterMode>, Props);
 type MutterLogical = (

@@ -9,7 +9,7 @@ use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{UnixListener, UnixStream};
 use zbus::Connection;
-use zbus::zvariant::OwnedValue;
+use zbus::OwnedVariant;
 
 use crate::livi_sock::Broadcaster;
 
@@ -227,8 +227,7 @@ async fn remove_device(bus: &Connection, adapter: &str, mac: &str) -> Result<(),
     if mac.is_empty() {
         return Err("remove requires a MAC".into());
     }
-    let path = zbus::zvariant::ObjectPath::try_from(device_path(adapter, mac))
-        .map_err(|e| e.to_string())?;
+    let path = zbus::ObjectPath::try_from(device_path(adapter, mac)).map_err(|e| e.to_string())?;
     let adapter_path = format!("/org/bluez/{adapter}");
     bus.call_method(
         Some("org.bluez"),
@@ -244,7 +243,7 @@ async fn remove_device(bus: &Connection, adapter: &str, mac: &str) -> Result<(),
 
 async fn get_prop<T>(bus: &Connection, path: &str, prop: &str) -> Option<T>
 where
-    T: TryFrom<OwnedValue>,
+    T: TryFrom<OwnedVariant>,
 {
     let reply = bus
         .call_method(
@@ -256,7 +255,7 @@ where
         )
         .await
         .ok()?;
-    let value: OwnedValue = reply.body().deserialize().ok()?;
+    let value: OwnedVariant = reply.body().deserialize().ok()?;
     T::try_from(value).ok()
 }
 
@@ -272,8 +271,8 @@ async fn list_paired(bus: &Connection, adapter: &str) -> Result<Vec<String>, Str
         .await
         .map_err(|e| e.to_string())?;
     let objects: std::collections::HashMap<
-        zbus::zvariant::OwnedObjectPath,
-        std::collections::HashMap<String, std::collections::HashMap<String, OwnedValue>>,
+        zbus::OwnedObjectPath,
+        std::collections::HashMap<String, std::collections::HashMap<String, OwnedVariant>>,
     > = reply.body().deserialize().map_err(|e| e.to_string())?;
 
     let prefix = format!("/org/bluez/{adapter}/dev_");
