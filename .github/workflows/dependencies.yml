@@ -1,16 +1,16 @@
 name: dependencies
-run-name: 'dependencies → ${{ inputs.include_major && ''major'' || ''minor+patch'' }} on ${{ inputs.branch }}'
+run-name: "dependencies → ${{ inputs.include_major && 'major' || 'minor+patch' }} on ${{ inputs.branch }}"
 
 on:
   workflow_dispatch:
     inputs:
       branch:
-        description: 'Branch to update'
+        description: "Branch to update"
         required: true
-        default: 'dev'
+        default: "dev"
         type: string
       include_major:
-        description: 'Include major updates'
+        description: "Include major updates"
         required: true
         default: false
         type: boolean

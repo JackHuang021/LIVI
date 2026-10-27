@@ -1,19 +1,19 @@
 name: gstreamer assets
-run-name: 'gstreamer-assets → ${{ github.ref_name }}'
+run-name: "gstreamer-assets → ${{ github.ref_name }}"
 
 on:
   workflow_dispatch:
     inputs:
       macos_arm64:
-        description: 'Build macOS arm64 bundle'
+        description: "Build macOS arm64 bundle"
         type: boolean
         default: true
       linux_x64:
-        description: 'Build Linux x64 bundle'
+        description: "Build Linux x64 bundle"
         type: boolean
         default: true
       linux_arm64:
-        description: 'Build Linux arm64 bundle'
+        description: "Build Linux arm64 bundle"
         type: boolean
         default: true
 

@@ -3,18 +3,18 @@
 [target.riscv32gc-unknown-linux-gnu]
 linker = "riscv32-linux-gcc"
 rustflags = [
-  "-C", "target-feature=+crt-static",
-  "-C", "relocation-model=static",
-  "-C", "link-arg=-static",
-  "-C", "link-arg=-no-pie",
+  "-Ctarget-feature=+crt-static",
+  "-Crelocation-model=static",
+  "-Clink-arg=-static",
+  "-Clink-arg=-no-pie",
 ]
 
 [target.mipsel-unknown-linux-musl]
 linker = "mipsel-buildroot-linux-musl-gcc"
 rustflags = [
-  "-C", "target-feature=+crt-static,-soft-float",
-  "-C", "link-arg=-static",
-  "-C", "link-self-contained=no",
+  "-Ctarget-feature=+crt-static,-soft-float",
+  "-Clink-arg=-static",
+  "-Clink-self-contained=no",
 ]
 
 [alias]

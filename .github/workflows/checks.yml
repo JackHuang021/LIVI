@@ -2,7 +2,7 @@ name: checks
 
 on:
   push:
-    branches: ['**']
+    branches: ["**"]
   pull_request:
     branches: [main, dev]
 
@@ -86,7 +86,7 @@ jobs:
 
       - name: Install pkg-config
         env:
-          HOMEBREW_NO_AUTO_UPDATE: '1'
+          HOMEBREW_NO_AUTO_UPDATE: "1"
         run: brew list --versions pkg-config >/dev/null || brew install pkg-config >/dev/null
 
       - name: Setup Rust
@@ -138,7 +138,32 @@ jobs:
         working-directory: native
         env:
           DYLD_LIBRARY_PATH: /Library/Frameworks/GStreamer.framework/Versions/1.0/lib
-          LINUX_ONLY: --exclude livi-compositor --exclude livid --exclude livi-accessoryd --exclude livi-mdns --exclude livi-web
         run: |
-          cargo clippy --workspace --all-targets --locked $LINUX_ONLY -- -D warnings
-          cargo test --workspace --locked $LINUX_ONLY
+          linux_only=(--exclude livi-compositor --exclude livid --exclude livi-accessoryd --exclude livi-mdns --exclude livi-web)
+          cargo clippy --workspace --all-targets --locked "${linux_only[@]}" -- -D warnings
+          cargo test --workspace --locked "${linux_only[@]}"
+
+  lint:
+    name: Lint (dprint, actionlint)
+    if: ${{ github.actor != 'github-actions' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Check formatting (YAML, Markdown, JSON, TOML)
+        run: |
+          set -euo pipefail
+          curl -fsSL https://dprint.dev/install.sh | sh -s 0.64.3 >/dev/null
+          "$HOME/.dprint/bin/dprint" check
+
+      - name: Lint the workflows
+        run: |
+          set -euo pipefail
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
+          ./actionlint -color

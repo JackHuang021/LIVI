@@ -2,7 +2,7 @@ name: maintenance
 
 on:
   schedule:
-    - cron: '20 4 * * *'
+    - cron: "20 4 * * *"
   workflow_dispatch:
 
 permissions:
@@ -17,8 +17,8 @@ jobs:
       - name: Cleanup workflow runs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RETAIN_DAYS: '7'
-          KEEP_MINIMUM_RUNS: '1'
+          RETAIN_DAYS: "7"
+          KEEP_MINIMUM_RUNS: "1"
         shell: bash
         run: |
           set -euo pipefail
@@ -78,7 +78,7 @@ jobs:
           declare -A KEEP_FOR_REF=()
 
           # Newest first, so the first store of each branch survives.
-          while read -r ID LAST REF KEY; do
+          while read -r ID _ REF _; do
             [ -n "${ID}" ] || continue
 
             if [ -z "${KEEP_FOR_REF[${REF}]+x}" ]; then

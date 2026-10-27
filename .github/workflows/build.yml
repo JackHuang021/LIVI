@@ -1,32 +1,32 @@
 name: build
-run-name: 'build → ${{ github.event.workflow_run.head_branch || github.ref_name }}'
+run-name: "build → ${{ github.event.workflow_run.head_branch || github.ref_name }}"
 
 on:
   workflow_run:
-    workflows: ['checks']
+    workflows: ["checks"]
     branches: [main]
     types: [completed]
 
   workflow_dispatch:
     inputs:
       linux_x64:
-        description: 'Build Linux x64'
+        description: "Build Linux x64"
         type: boolean
         default: true
       linux_arm64:
-        description: 'Build Linux arm64'
+        description: "Build Linux arm64"
         type: boolean
         default: true
       macos_arm64:
-        description: 'Build macOS arm64 (dmg)'
+        description: "Build macOS arm64 (dmg)"
         type: boolean
         default: true
       macos_x64:
-        description: 'Build macOS x64 (dmg)'
+        description: "Build macOS x64 (dmg)"
         type: boolean
         default: true
       publish_nightly:
-        description: 'Publish nightly release'
+        description: "Publish nightly release"
         type: boolean
         default: true
 
@@ -36,7 +36,7 @@ permissions:
 
 env:
   CARGO_INCREMENTAL: 0
-  APPIMAGETOOL_VERSION: '1.9.0'
+  APPIMAGETOOL_VERSION: "1.9.0"
 
 jobs:
   plan:
@@ -141,7 +141,7 @@ jobs:
         if: matrix.os == 'macos'
         shell: bash
         env:
-          HOMEBREW_NO_AUTO_UPDATE: '1'
+          HOMEBREW_NO_AUTO_UPDATE: "1"
         run: |
           set -euo pipefail
           brew list --versions pkg-config >/dev/null || brew install pkg-config >/dev/null

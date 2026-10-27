@@ -1,39 +1,39 @@
 name: livi-link
-run-name: 'livi-link → ${{ github.ref_name }}'
+run-name: "livi-link → ${{ github.ref_name }}"
 
 on:
   workflow_dispatch:
     inputs:
       v821b_aic8800d80:
-        description: 'Build v821b_aic8800d80 (riscv32, musl, mainline kernel)'
+        description: "Build v821b_aic8800d80 (riscv32, musl, mainline kernel)"
         type: boolean
         default: true
       ax520_aic8800d80:
-        description: 'Build ax520_aic8800d80 (armv7, static-musl, mainline kernel)'
+        description: "Build ax520_aic8800d80 (armv7, static-musl, mainline kernel)"
         type: boolean
         default: true
       imx6ul_iw416:
-        description: 'Build imx6ul_iw416 (armv7, static-musl, mainline kernel)'
+        description: "Build imx6ul_iw416 (armv7, static-musl, mainline kernel)"
         type: boolean
         default: true
       imx6ul_rtl8822cs:
-        description: 'Build imx6ul_rtl8822cs (armv7, static-musl, mainline kernel)'
+        description: "Build imx6ul_rtl8822cs (armv7, static-musl, mainline kernel)"
         type: boolean
         default: true
       imx6ul_rtl8822bs:
-        description: 'Build imx6ul_rtl8822bs (armv7, static-musl, mainline kernel)'
+        description: "Build imx6ul_rtl8822bs (armv7, static-musl, mainline kernel)"
         type: boolean
         default: true
       imx6ul_bcm4354:
-        description: 'Build imx6ul_bcm4354 (armv7, static-musl, mainline kernel)'
+        description: "Build imx6ul_bcm4354 (armv7, static-musl, mainline kernel)"
         type: boolean
         default: true
       x1600_aic8800d80:
-        description: 'Build x1600_aic8800d80 (mipsel, musl, mainline kernel)'
+        description: "Build x1600_aic8800d80 (mipsel, musl, mainline kernel)"
         type: boolean
-        default: true
+        default: false
       bindshells:
-        description: 'Rebuild the provisioner bind-shells (armv7, riscv32, mipsel)'
+        description: "Rebuild the provisioner bind-shells (armv7, riscv32, mipsel)"
         type: boolean
         default: false
 

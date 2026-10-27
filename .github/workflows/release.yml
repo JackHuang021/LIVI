@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       build_run_id:
-        description: 'ID of successful build run (leave empty = latest on main)'
+        description: "ID of successful build run (leave empty = latest on main)"
         required: false
       draft:
-        description: 'Create as draft?'
+        description: "Create as draft?"
         type: boolean
         default: true
 

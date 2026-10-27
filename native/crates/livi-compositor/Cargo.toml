@@ -13,15 +13,15 @@ path = "src/main.rs"
 
 [dependencies]
 smithay = { version = "0.7", default-features = false, features = [
-    "wayland_frontend",
-    "backend_egl",
-    "backend_drm",
-    "backend_gbm",
-    "backend_libinput",
-    "backend_session_libseat",
-    "backend_udev",
-    "renderer_gl",
-    "use_system_lib",
+  "wayland_frontend",
+  "backend_egl",
+  "backend_drm",
+  "backend_gbm",
+  "backend_libinput",
+  "backend_session_libseat",
+  "backend_udev",
+  "renderer_gl",
+  "use_system_lib",
 ] }
 smithay-client-toolkit = { version = "0.21", default-features = false, features = ["calloop", "xkbcommon"] }
 wayland-egl = "0.32"

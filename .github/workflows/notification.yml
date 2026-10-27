@@ -21,10 +21,12 @@ jobs:
           set -e
 
           if [ "$HAS_RELEASE_EVENT" = "true" ]; then
-            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
-            echo "url=${{ github.event.release.html_url }}" >> "$GITHUB_OUTPUT"
-            echo "prerelease=${{ github.event.release.prerelease }}" >> "$GITHUB_OUTPUT"
-            echo "date=${{ github.event.release.published_at }}" >> "$GITHUB_OUTPUT"
+            {
+              echo "tag=${{ github.event.release.tag_name }}"
+              echo "url=${{ github.event.release.html_url }}"
+              echo "prerelease=${{ github.event.release.prerelease }}"
+              echo "date=${{ github.event.release.published_at }}"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -47,10 +49,12 @@ jobs:
             exit 1
           fi
 
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
-          echo "date=$date" >> "$GITHUB_OUTPUT"
+          {
+            echo "tag=$tag"
+            echo "url=$url"
+            echo "prerelease=$prerelease"
+            echo "date=$date"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Send release to Discord
         env:
