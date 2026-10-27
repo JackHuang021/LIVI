@@ -21,6 +21,7 @@ pub struct Look {
     pub primary: Option<[u8; 3]>,
     pub highlight: Option<[u8; 3]>,
     pub background: Option<[u8; 3]>,
+    pub text: Option<[u8; 3]>,
     pub zoom: f32,
     pub stream: (i32, i32),
     pub language: String,
@@ -89,6 +90,7 @@ pub fn look(config: &Value) -> Look {
         primary: pick("primaryColorDark", "primaryColorLight"),
         highlight: pick("highlightColorDark", "highlightColorLight"),
         background: pick("backgroundColorDark", "backgroundColorLight"),
+        text: pick("textColorDark", "textColorLight"),
         zoom: config["uiZoomPercent"]
             .as_f64()
             .filter(|z| *z > 0.0)

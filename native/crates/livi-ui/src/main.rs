@@ -103,6 +103,7 @@ fn apply_look(ui: &AppWindow, look: Look) {
     theme.set_primary_override(rgb(look.primary));
     theme.set_highlight_override(rgb(look.highlight));
     theme.set_background_override(rgb(look.background));
+    theme.set_text_override(rgb(look.text));
     ui.set_right_hand(look.right_hand);
     ui.set_stream_width(look.stream.0);
     ui.set_stream_height(look.stream.1);

@@ -177,6 +177,10 @@ pub struct Config {
     pub background_color_dark: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub background_color_light: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text_color_dark: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text_color_light: Option<String>,
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub carplay_icon120: Option<String>,
@@ -531,6 +535,8 @@ pub fn defaults() -> Config {
         highlight_color_dark: empty(),
         background_color_dark: empty(),
         background_color_light: empty(),
+        text_color_dark: empty(),
+        text_color_light: empty(),
         carplay_icon120: empty(),
         carplay_icon180: empty(),
         carplay_icon256: empty(),

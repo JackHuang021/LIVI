@@ -19,7 +19,7 @@ export component Switch inherits Rectangle {
         width: 34px;
         height: 14px;
         border-radius: 7px;
-        background: root.checked ? Theme.primary : (Theme.dark ? #ffffff4d : #00000061);
+        background: root.checked ? Theme.primary.with-alpha(0.5) : (Theme.dark ? #ffffff4d : #00000061);
     }
     Rectangle {
         x: root.checked ? 29px : 9px;
@@ -27,7 +27,10 @@ export component Switch inherits Rectangle {
         width: 20px;
         height: 20px;
         border-radius: 10px;
-        background: root.checked ? Theme.primary : (Theme.dark ? #e0e0e0 : #fafafa);
+        background: root.checked ? Theme.primary : (Theme.dark ? #e0e0e0 : #ffffff);
+        drop-shadow-blur: 2px;
+        drop-shadow-offset-y: 1px;
+        drop-shadow-color: #00000066;
         animate x { duration: 150ms; easing: ease-out; }
     }
     TouchArea {

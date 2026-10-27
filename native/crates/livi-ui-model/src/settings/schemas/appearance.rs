@@ -78,6 +78,7 @@ pub fn schema() -> Node {
                         "Background Color Dark",
                         "backgroundColorDark",
                     ),
+                    color("settings.textColorDark", "Text Color Dark", "textColorDark"),
                     color(
                         "settings.primaryColorLight",
                         "Primary Color Light",
@@ -92,6 +93,11 @@ pub fn schema() -> Node {
                         "settings.backgroundColorLight",
                         "Background Color Light",
                         "backgroundColorLight",
+                    ),
+                    color(
+                        "settings.textColorLight",
+                        "Text Color Light",
+                        "textColorLight",
                     ),
                 ],
             )

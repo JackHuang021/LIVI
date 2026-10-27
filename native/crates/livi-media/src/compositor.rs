@@ -358,7 +358,7 @@ pub fn backdrop_hex(cfg: &Config) -> String {
     match pick.as_deref().filter(|c| !c.is_empty()) {
         Some(c) => c.to_string(),
         None if cfg.dark_mode => "#000000".into(),
-        None => "#d4d4d4".into(),
+        None => "#f5f5f5".into(),
     }
 }
 
@@ -886,7 +886,7 @@ mod tests {
         let mut cfg = defaults();
         assert_eq!(backdrop_hex(&cfg), "#000000");
         cfg.dark_mode = false;
-        assert_eq!(backdrop_hex(&cfg), "#d4d4d4");
+        assert_eq!(backdrop_hex(&cfg), "#f5f5f5");
         cfg.background_color_light = Some("#ffffff".into());
         assert_eq!(backdrop_hex(&cfg), "#ffffff");
         assert_eq!(rgb("#ff8000"), (255, 128, 0));

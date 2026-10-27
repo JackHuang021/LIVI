@@ -240,7 +240,9 @@ pub fn default_color(path: &str) -> &'static str {
         "primaryColorLight" => "#008585",
         "highlightColorLight" => "#007575",
         "backgroundColorDark" => "#000000",
-        "backgroundColorLight" => "#d4d4d4",
+        "backgroundColorLight" => "#f5f5f5",
+        "textColorDark" => "#ffffff",
+        "textColorLight" => "#000000",
         _ => "#009494",
     }
 }

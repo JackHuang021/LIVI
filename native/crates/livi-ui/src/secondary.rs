@@ -43,6 +43,7 @@ fn copy_theme(main: &AppWindow, w: &SecondaryWindow) {
     to.set_primary_override(from.get_primary_override());
     to.set_highlight_override(from.get_highlight_override());
     to.set_background_override(from.get_background_override());
+    to.set_text_override(from.get_text_override());
 }
 
 fn open(main: &AppWindow, client: &Client, spec: &Secondary) -> Option<SecondaryWindow> {
