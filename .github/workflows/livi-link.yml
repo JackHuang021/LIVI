@@ -48,13 +48,13 @@ jobs:
     name: cargo test shared crates (host)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup Rust
         run: rustup toolchain install
 
       - name: Cache cargo
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry/index
@@ -74,7 +74,7 @@ jobs:
     env:
       TOP: ${{ github.workspace }}/build/bundle-sanity
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Fake mtd1/mtd3 for pack-bundle
         run: |
@@ -140,7 +140,7 @@ jobs:
     env:
       ASSET_DIR: native/crates/livi-link-provision/assets/bindshell
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install zig
         shell: bash
@@ -159,7 +159,7 @@ jobs:
         run: bash scripts/livi-link/common/bindshell/build.sh "${{ matrix.arch }}" "$ASSET_DIR/${{ matrix.arch }}"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: bindshell-${{ matrix.arch }}
           path: native/crates/livi-link-provision/assets/bindshell/${{ matrix.arch }}
@@ -185,7 +185,7 @@ jobs:
           apt-get install -y --no-install-recommends \
             ca-certificates curl git xz-utils build-essential file rsync
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
 
@@ -245,7 +245,7 @@ jobs:
 
       - name: Cache cargo (v821b)
         if: matrix.target == 'v821b_aic8800d80'
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry/index
@@ -288,7 +288,7 @@ jobs:
 
       - name: Cache cargo (armv7)
         if: matrix.target == 'ax520_aic8800d80' || startsWith(matrix.target, 'imx6ul_')
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry/index
@@ -352,7 +352,7 @@ jobs:
 
       - name: Cache cargo (x1600)
         if: matrix.target == 'x1600_aic8800d80'
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry/index
@@ -384,7 +384,7 @@ jobs:
           livi_firmware_json "assets/livi-link/x1600_aic8800d80/$(basename "$BUNDLE")"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.target }}
           path: assets/livi-link/${{ matrix.target }}
@@ -400,7 +400,7 @@ jobs:
       (needs.bindshell.result == 'success' || needs.bindshell.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
 
@@ -518,7 +518,7 @@ jobs:
             runner: ubuntu-24.04-arm
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Take the v821b firmware bundle from this run
         if: contains(needs.targets.outputs.any, 'v821b_aic8800d80')
@@ -580,7 +580,7 @@ jobs:
           rustc --version
 
       - name: Cache cargo
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry/index
@@ -602,7 +602,7 @@ jobs:
         run: mv livi-link-provision livi-link-provision-${{ matrix.name }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: livi-link-provision-${{ matrix.name }}
           path: ${{ env.TOOL_DIR }}/livi-link-provision-${{ matrix.name }}

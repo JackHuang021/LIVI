@@ -92,7 +92,7 @@ jobs:
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
           ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || github.event.workflow_run.head_sha }}
@@ -155,7 +155,7 @@ jobs:
       - name: Cache GStreamer pkgs [macos]
         id: gstcache_mac
         if: matrix.os == 'macos'
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             gst-runtime.pkg
@@ -188,7 +188,7 @@ jobs:
           rustc --version
 
       - name: Cache cargo
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry/index
@@ -219,7 +219,7 @@ jobs:
           cargo xtask package-mac --arch '${{ matrix.arch }}'
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ format('LIVI-{0}-{1}-{2}.{3}', steps.pkg.outputs.version, matrix.os, matrix.arch, matrix.artifact_ext) }}
           path: dist/*.${{ matrix.artifact_ext }}
@@ -266,7 +266,7 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           sparse-checkout: |
             assets/livi-link

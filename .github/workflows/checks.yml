@@ -20,7 +20,7 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
@@ -33,7 +33,7 @@ jobs:
           rustc --version
 
       - name: Cache cargo
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry/index
@@ -80,7 +80,7 @@ jobs:
       PKG_CONFIG_PATH: /Library/Frameworks/GStreamer.framework/Versions/1.0/lib/pkgconfig
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
@@ -101,7 +101,7 @@ jobs:
 
       - name: Cache GStreamer pkgs
         id: gstcache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             gst-runtime.pkg
@@ -124,7 +124,7 @@ jobs:
           sudo installer -pkg gst-devel.pkg -target /
 
       - name: Cache cargo
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry/index
@@ -152,7 +152,7 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
