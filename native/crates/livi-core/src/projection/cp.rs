@@ -258,8 +258,13 @@ impl Projection {
                 }
                 for (field, key) in [
                     (&mut nav.road_name, "roadName"),
-                    (&mut nav.after_road_name, "afterRoadName"),
                     (&mut nav.destination_name, "destinationName"),
+                    (
+                        &mut nav.distance_to_destination_display,
+                        "distanceToDestinationDisplay",
+                    ),
+                    (&mut nav.remain_distance_display, "remainDistanceDisplay"),
+                    (&mut nav.app_name, "appName"),
                 ] {
                     if let Some(v) = text(key) {
                         *field = Some(v);
@@ -276,19 +281,68 @@ impl Projection {
                 }
                 for (field, key) in [
                     (&mut nav.order_type, "orderType"),
-                    (&mut nav.maneuver_type, "maneuverType"),
-                    (&mut nav.turn_side, "turnSide"),
-                    (&mut nav.junction_type, "junctionType"),
+                    (
+                        &mut nav.distance_to_destination_units,
+                        "distanceToDestinationUnits",
+                    ),
+                    (&mut nav.remain_distance_units, "remainDistanceUnits"),
+                    (&mut nav.maneuver_count, "maneuverCount"),
+                    (&mut nav.lane_guidance_index, "laneGuidanceIndex"),
+                    (&mut nav.lane_guidance_count, "laneGuidanceCount"),
                 ] {
                     if let Some(v) = code(key) {
                         *field = Some(v);
                     }
                 }
-                if let Some(v) = num("turnAngle") {
-                    nav.turn_angle = Some(v as i32);
+                for (field, key) in [
+                    (&mut nav.visible_in_app, "visibleInApp"),
+                    (&mut nav.lane_guidance_shown, "laneGuidanceShown"),
+                    (
+                        &mut nav.source_supports_route_guidance,
+                        "sourceSupportsRouteGuidance",
+                    ),
+                ] {
+                    if let Some(v) = event.get(key).and_then(Value::as_bool) {
+                        *field = Some(v);
+                    }
+                }
+                if let Some(v) = num("destinationTimeZoneOffsetMinutes") {
+                    nav.destination_time_zone_offset_minutes = Some(v as i32);
+                }
+                for (field, key) in [
+                    (&mut nav.maneuver_type, "maneuverType"),
+                    (&mut nav.turn_side, "turnSide"),
+                    (&mut nav.junction_type, "junctionType"),
+                ] {
+                    if event.get(key).is_some() {
+                        *field = code(key);
+                    }
+                }
+                if event.get("turnAngle").is_some() {
+                    nav.turn_angle = num("turnAngle").map(|v| v as i32);
+                }
+                if event.get("afterRoadName").is_some() {
+                    nav.after_road_name = text("afterRoadName");
                 }
                 if let Some(v) = num("etaEpoch").filter(|v| *v > 0.0) {
                     nav.eta = Some(v);
+                }
+                if let Some(Ok(v)) = event.get("maneuvers").cloned().map(serde_json::from_value) {
+                    nav.maneuvers = v;
+                }
+                if let Some(Ok(v)) = event
+                    .get("currentManeuvers")
+                    .cloned()
+                    .map(serde_json::from_value)
+                {
+                    nav.current_maneuvers = v;
+                }
+                if let Some(Ok(v)) = event
+                    .get("laneGuidance")
+                    .cloned()
+                    .map(serde_json::from_value)
+                {
+                    nav.lane_guidance = v;
                 }
             }
             Some("nowplaying") => {

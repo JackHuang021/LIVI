@@ -53,8 +53,8 @@ const SENT: &[u16] = &[
 ];
 
 const RECEIVED: &[u16] = &[
-    0xEA00, 0xEA01, 0xA100, 0xA102, 0x4E0D, 0x4E0E, 0x5702, 0x5001, 0x5201, 0x5202, 0xFFFA, 0xFFFC,
-    0xAE01, 0x4158, 0x4155, 0x4E0B, 0x4300,
+    0xEA00, 0xEA01, 0xA100, 0xA102, 0x4E0D, 0x4E0E, 0x5702, 0x5001, 0x5201, 0x5202, 0x5204, 0xFFFA,
+    0xFFFC, 0xAE01, 0x4158, 0x4155, 0x4E0B, 0x4300,
 ];
 
 const POWER_SOURCE_UPDATE: u16 = 0xAE03;
@@ -204,9 +204,9 @@ pub fn build_identification(
                 max_destination_name_length: Some(128),
                 max_after_maneuver_road_name_length: Some(128),
                 max_maneuver_description_length: Some(128),
-                max_guidance_maneuver_storage_capacity: Some(0),
-                max_lane_guidance_description_length: None,
-                max_lane_guidance_storage_capacity: None,
+                max_guidance_maneuver_storage_capacity: Some(50),
+                max_lane_guidance_description_length: Some(128),
+                max_lane_guidance_storage_capacity: Some(50),
             }]
         },
     }

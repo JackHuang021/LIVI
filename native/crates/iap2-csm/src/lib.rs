@@ -132,6 +132,7 @@ macro_rules! csm_enum {
 macro_rules! csm_field_ty {
     (opt $($k:tt)+) => { Option<$crate::csm_field_ty!($($k)+)> };
     (list $($k:tt)+) => { Vec<$crate::csm_field_ty!($($k)+)> };
+    (rep $($k:tt)+) => { Vec<$crate::csm_field_ty!($($k)+)> };
     (flag) => { bool };
     (bool) => { bool };
     (i8) => { i8 };
@@ -303,6 +304,11 @@ macro_rules! csm_field_encode {
             $crate::put_param($out, $pid, &p);
         }
     };
+    ($out:expr_2021, $pid:expr_2021, $v:expr_2021, rep $($k:tt)+) => {
+        for v in &$v {
+            $crate::put_param($out, $pid, &$crate::csm_val_encode!(v, $($k)+));
+        }
+    };
     ($out:expr_2021, $pid:expr_2021, $v:expr_2021, flag) => {
         if $v {
             $crate::put_param($out, $pid, &[]);
@@ -327,6 +333,13 @@ macro_rules! csm_field_decode {
             None => Ok(Vec::new()),
             Some((_, b)) => $crate::csm_val_decode!(*b, $n, $($k)+).map(|v| vec![v]),
         }
+    };
+    ($params:expr_2021, $pid:expr_2021, $msg:expr_2021, $n:expr_2021, rep $($k:tt)+) => {
+        $params
+            .iter()
+            .filter(|(id, _)| *id == $pid)
+            .map(|(_, b)| $crate::csm_val_decode!(*b, $n, $($k)+))
+            .collect::<Result<Vec<_>, $crate::Error>>()
     };
     ($params:expr_2021, $pid:expr_2021, $msg:expr_2021, $n:expr_2021, flag) => {
         Ok::<_, $crate::Error>($params.iter().any(|(id, _)| *id == $pid))

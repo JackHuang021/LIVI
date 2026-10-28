@@ -820,6 +820,11 @@ fn written_out(nav: &mut Navigation, language: nav_text::Language) {
     nav.maneuver_distance_text = nav.remain_distance.and_then(nav_text::distance);
     nav.destination_distance_text = nav.distance_to_destination.and_then(nav_text::distance);
     nav.time_left_text = nav.time_to_destination.and_then(nav_text::time_left);
+    for m in &mut nav.maneuvers {
+        m.maneuver_text = m
+            .maneuver_type
+            .and_then(|code| nav_text::maneuver(code, language));
+    }
 }
 
 async fn player_created(

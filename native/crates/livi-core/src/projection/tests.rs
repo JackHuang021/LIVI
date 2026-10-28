@@ -4,6 +4,7 @@
 
 use livi_core_proto::config::{AppearanceMode, defaults};
 use livi_core_proto::input::Point;
+use livi_core_proto::state::Maneuver;
 use livi_cp::stack::AudioProfile;
 use livi_media::compositor::CompositorControl;
 use livi_media::gst_host::GstHost;
@@ -1025,7 +1026,11 @@ async fn navigation_follows_the_phone_in_front_and_clears_at_the_end() {
                 "afterRoadName": "Side St", "destinationName": "Home",
                 "timeToDestination": 600, "distanceToDestination": 5000,
                 "remainDistance": 200, "maneuverType": 1, "turnSide": 0,
-                "junctionType": 1, "turnAngle": -90, "etaEpoch": 1_800_000_000 }),
+                "junctionType": 1, "turnAngle": -90, "etaEpoch": 1_800_000_000,
+                "maneuvers": [
+                    { "index": 0, "maneuverType": 1, "afterRoadName": "Side St" },
+                    { "index": 1, "maneuverType": 12 }
+                ] }),
     );
     rig.meta(
         1,
@@ -1055,6 +1060,21 @@ async fn navigation_follows_the_phone_in_front_and_clears_at_the_end() {
             maneuver_distance_text: Some("150 m".into()),
             destination_distance_text: Some("5.0 km".into()),
             time_left_text: Some("10 min".into()),
+            maneuvers: vec![
+                Maneuver {
+                    index: 0,
+                    maneuver_type: Some(1),
+                    after_road_name: Some("Side St".into()),
+                    maneuver_text: Some("Turn left".into()),
+                    ..Default::default()
+                },
+                Maneuver {
+                    index: 1,
+                    maneuver_type: Some(12),
+                    maneuver_text: Some("Arrived".into()),
+                    ..Default::default()
+                },
+            ],
             ..Default::default()
         }
     );
@@ -1064,6 +1084,10 @@ async fn navigation_follows_the_phone_in_front_and_clears_at_the_end() {
     assert_eq!(
         rig.navigation().maneuver_text.as_deref(),
         Some("Links abbiegen")
+    );
+    assert_eq!(
+        rig.navigation().maneuvers[1].maneuver_text.as_deref(),
+        Some("Angekommen")
     );
 
     rig.meta(

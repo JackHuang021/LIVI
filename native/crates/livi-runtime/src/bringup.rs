@@ -119,6 +119,10 @@ fn subscriptions() -> Vec<Vec<u8>> {
         .encode(),
         StartRouteGuidanceUpdates {
             display_component_id: None,
+            source_name: true,
+            source_supports_route_guidance: true,
+            supports_exit_info: true,
+            destination_time_zone_offset_minutes: true,
         }
         .encode(),
         StartPowerUpdates {

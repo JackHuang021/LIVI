@@ -2,13 +2,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Additional terms: see NOTICE
 
+use std::collections::BTreeMap;
+
 use iap2_csm::CsmMessage;
 use iap2_csm::messages::communications::CallStateUpdate;
 use iap2_csm::messages::communications::CommunicationsUpdate;
 use iap2_csm::messages::device_notifications::DeviceTimeUpdate;
 use iap2_csm::messages::now_playing::{NowPlayingUpdate, PlaybackStatus};
 use iap2_csm::messages::power::PowerUpdate;
-use iap2_csm::messages::route_guidance::{RouteGuidanceManeuverUpdate, RouteGuidanceUpdate};
+use iap2_csm::messages::route_guidance::{
+    LaneGuidanceInformation, RouteGuidanceManeuverUpdate, RouteGuidanceUpdate,
+};
+use serde_json::{Map, Value, json};
 
 use crate::framing::frame_msg_id;
 
@@ -45,19 +50,47 @@ pub struct EventTag {
     pub navigation: Navigation,
 }
 
-#[derive(Debug, Default, Clone)]
-pub struct Navigation {
-    maneuvers: std::collections::HashMap<u16, Maneuver>,
-    current: Option<u16>,
-}
+const ROUTE_CAPACITY: usize = 50;
 
 #[derive(Debug, Default, Clone)]
-struct Maneuver {
-    kind: Option<u8>,
-    side: Option<u8>,
-    junction: Option<u8>,
-    angle: Option<i16>,
-    road_after: Option<String>,
+pub struct Navigation {
+    maneuvers: BTreeMap<u16, RouteGuidanceManeuverUpdate>,
+    lanes: BTreeMap<u16, LaneGuidanceInformation>,
+    current: Vec<u16>,
+    count: Option<u16>,
+    lane_index: Option<u16>,
+}
+
+impl Navigation {
+    fn prune(&mut self) {
+        if let Some(first) = self.current.iter().min() {
+            self.maneuvers.retain(|i, _| i >= first);
+        }
+        if let Some(count) = self.count {
+            self.maneuvers.retain(|i, _| *i < count);
+        }
+        while self.maneuvers.len() > ROUTE_CAPACITY {
+            self.maneuvers.pop_first();
+        }
+        if let Some(first) = self.lane_index {
+            self.lanes.retain(|i, _| *i >= first);
+        }
+        while self.lanes.len() > ROUTE_CAPACITY {
+            self.lanes.pop_first();
+        }
+    }
+
+    fn lists(&self, o: &mut Obj) {
+        let maneuvers: Vec<Value> = self.maneuvers.values().map(maneuver_value).collect();
+        let lanes: Vec<Value> = self.lanes.values().map(lane_guidance_value).collect();
+        o.raw("maneuvers", &Value::from(maneuvers).to_string());
+        o.raw("currentManeuvers", &json!(self.current).to_string());
+        o.raw("laneGuidance", &Value::from(lanes).to_string());
+    }
+
+    fn current_turn(&self) -> Option<&RouteGuidanceManeuverUpdate> {
+        self.current.first().and_then(|i| self.maneuvers.get(i))
+    }
 }
 
 impl EventTag {
@@ -81,56 +114,106 @@ impl EventTag {
         match frame_msg_id(frame)? {
             0x5201 => {
                 let m = RouteGuidanceUpdate::decode(frame).ok()?;
-                if let Some(list) = &m.current_maneuver_list
-                    && list.len() >= 2
-                {
-                    self.navigation.current = Some(u16::from_be_bytes([list[0], list[1]]));
+                let nav = &mut self.navigation;
+                if m.state == Some(0) {
+                    *nav = Navigation::default();
                 }
+                if let Some(list) = m.current_maneuver_list.as_deref() {
+                    nav.current = indices(list);
+                }
+                nav.count = m.maneuver_count.or(nav.count);
+                nav.lane_index = m.lane_guidance_index.or(nav.lane_index);
+                nav.prune();
                 let mut o = Obj::new("navigation");
-                if let Some(s) = m.state {
-                    o.num("status", s);
+                if let Some(v) = m.state {
+                    o.num("status", v);
                 }
-                if let Some(s) = m.maneuver_state {
-                    o.num("orderType", s);
+                if let Some(v) = m.maneuver_state {
+                    o.num("orderType", v);
                 }
-                if let Some(r) = m.current_road_name {
-                    o.str("roadName", &r);
+                if let Some(v) = &m.current_road_name {
+                    o.str("roadName", v);
                 }
-                if let Some(d) = m.destination_name {
-                    o.str("destinationName", &d);
+                if let Some(v) = &m.destination_name {
+                    o.str("destinationName", v);
                 }
-                if let Some(e) = m.eta {
-                    o.num("etaEpoch", e);
+                if let Some(v) = m.eta {
+                    o.num("etaEpoch", v);
                 }
-                if let Some(t) = m.time_remaining {
-                    o.num("timeToDestination", t);
+                if let Some(v) = m.time_remaining {
+                    o.num("timeToDestination", v);
                 }
-                if let Some(d) = m.distance_remaining {
-                    o.num("distanceToDestination", d);
+                if let Some(v) = m.distance_remaining {
+                    o.num("distanceToDestination", v);
                 }
-                if let Some(d) = m.distance_to_maneuver {
-                    o.num("remainDistance", d);
+                if let Some(v) = &m.distance_remaining_display {
+                    o.str("distanceToDestinationDisplay", v);
                 }
-                if let Some(turn) = self
-                    .navigation
-                    .current
-                    .and_then(|i| self.navigation.maneuvers.get(&i))
-                {
+                if let Some(v) = m.distance_remaining_units {
+                    o.num("distanceToDestinationUnits", v);
+                }
+                if let Some(v) = m.distance_to_maneuver {
+                    o.num("remainDistance", v);
+                }
+                if let Some(v) = &m.distance_to_maneuver_display {
+                    o.str("remainDistanceDisplay", v);
+                }
+                if let Some(v) = m.distance_to_maneuver_units {
+                    o.num("remainDistanceUnits", v);
+                }
+                if let Some(v) = m.maneuver_count {
+                    o.num("maneuverCount", v);
+                }
+                if let Some(v) = m.visible_in_app {
+                    o.bool("visibleInApp", v);
+                }
+                if let Some(v) = m.lane_guidance_index {
+                    o.num("laneGuidanceIndex", v);
+                }
+                if let Some(v) = m.lane_guidance_count {
+                    o.num("laneGuidanceCount", v);
+                }
+                if let Some(v) = m.lane_guidance_shown {
+                    o.bool("laneGuidanceShown", v);
+                }
+                if let Some(v) = &m.source_name {
+                    o.str("appName", v);
+                }
+                if let Some(v) = m.source_supports_route_guidance {
+                    o.bool("sourceSupportsRouteGuidance", v);
+                }
+                if let Some(v) = m.destination_time_zone_offset_minutes {
+                    o.num("destinationTimeZoneOffsetMinutes", v);
+                }
+                if let Some(turn) = nav.current_turn() {
                     maneuver_fields(&mut o, turn);
                 }
+                nav.lists(&mut o);
                 o.finish()
             }
             0x5202 => {
                 let m = RouteGuidanceManeuverUpdate::decode(frame).ok()?;
                 let index = m.index?;
-                let current = self.navigation.current == Some(index);
-                let turn = self.navigation.maneuvers.entry(index).or_default();
-                turn.merge(m);
-                if !current {
-                    return None;
-                }
+                let nav = &mut self.navigation;
+                nav.maneuvers.insert(index, m);
+                nav.prune();
                 let mut o = Obj::new("navigation");
-                maneuver_fields(&mut o, turn);
+                if nav.current.first() == Some(&index)
+                    && let Some(turn) = nav.current_turn()
+                {
+                    maneuver_fields(&mut o, turn);
+                }
+                nav.lists(&mut o);
+                o.finish()
+            }
+            0x5204 => {
+                let m = LaneGuidanceInformation::decode(frame).ok()?;
+                let index = m.index?;
+                let nav = &mut self.navigation;
+                nav.lanes.insert(index, m);
+                nav.prune();
+                let mut o = Obj::new("navigation");
+                nav.lists(&mut o);
                 o.finish()
             }
             _ => None,
@@ -185,6 +268,10 @@ impl Obj {
             parts: vec![format!("\"type\":\"{kind}\"")],
         }
     }
+    fn raw(&mut self, key: &str, json: &str) {
+        self.parts.push(format!("\"{key}\":{json}"));
+    }
+
     fn str(&mut self, key: &str, value: &str) {
         self.parts.push(format!("\"{key}\":\"{}\"", escape(value)));
     }
@@ -306,89 +393,244 @@ fn call(frame: &[u8]) -> Option<String> {
     o.finish()
 }
 
-impl Maneuver {
-    fn merge(&mut self, m: RouteGuidanceManeuverUpdate) {
-        self.kind = m.maneuver_type.or(self.kind);
-        self.side = m.driving_side.or(self.side);
-        self.junction = m.junction_type.or(self.junction);
-        self.angle = m.exit_angle.or(self.angle);
-        self.road_after = m.after_maneuver_road_name.or(self.road_after.take());
+fn indices(list: &[u8]) -> Vec<u16> {
+    list.as_chunks::<2>()
+        .0
+        .iter()
+        .map(|b| u16::from_be_bytes(*b))
+        .collect()
+}
+
+fn maneuver_fields(o: &mut Obj, turn: &RouteGuidanceManeuverUpdate) {
+    o.raw("maneuverType", &opt(turn.maneuver_type));
+    o.raw("turnSide", &opt(turn.driving_side));
+    o.raw("junctionType", &opt(turn.junction_type));
+    o.raw("turnAngle", &opt(turn.exit_angle));
+    o.raw(
+        "afterRoadName",
+        &opt(turn.after_maneuver_road_name.as_deref()),
+    );
+}
+
+fn opt<T: Into<Value>>(v: Option<T>) -> String {
+    v.map_or(Value::Null, Into::into).to_string()
+}
+
+fn set(map: &mut Map<String, Value>, key: &str, value: Option<impl Into<Value>>) {
+    if let Some(v) = value {
+        map.insert(key.into(), v.into());
     }
 }
 
-fn maneuver_fields(o: &mut Obj, turn: &Maneuver) {
-    if let Some(t) = turn.kind {
-        o.num("maneuverType", t);
-    }
-    if let Some(s) = turn.side {
-        o.num("turnSide", s);
-    }
-    if let Some(j) = turn.junction {
-        o.num("junctionType", j);
-    }
-    if let Some(a) = turn.angle {
-        o.num("turnAngle", a);
-    }
-    if let Some(r) = &turn.road_after {
-        o.str("afterRoadName", r);
-    }
+fn maneuver_value(m: &RouteGuidanceManeuverUpdate) -> Value {
+    let mut o = Map::new();
+    set(&mut o, "index", m.index);
+    set(&mut o, "maneuverType", m.maneuver_type);
+    set(&mut o, "turnSide", m.driving_side);
+    set(&mut o, "junctionType", m.junction_type);
+    set(&mut o, "turnAngle", m.exit_angle);
+    set(&mut o, "afterRoadName", m.after_maneuver_road_name.clone());
+    set(&mut o, "description", m.description.clone());
+    set(&mut o, "distanceBetween", m.distance_between);
+    set(
+        &mut o,
+        "distanceBetweenDisplay",
+        m.distance_between_display.clone(),
+    );
+    set(&mut o, "distanceBetweenUnits", m.distance_between_units);
+    o.insert("junctionAngles".into(), json!(m.junction_element_angles));
+    set(&mut o, "linkedLaneGuidance", m.linked_lane_guidance);
+    set(&mut o, "exitInfo", m.exit_info.clone());
+    Value::Object(o)
+}
+
+fn lane_guidance_value(g: &LaneGuidanceInformation) -> Value {
+    let lanes: Vec<Value> = g
+        .lanes
+        .iter()
+        .map(|l| {
+            let mut o = Map::new();
+            set(&mut o, "index", l.index);
+            set(&mut o, "status", l.status);
+            o.insert("angles".into(), json!(l.angles));
+            set(&mut o, "highlightAngle", l.highlight_angle);
+            Value::Object(o)
+        })
+        .collect();
+    let mut o = Map::new();
+    set(&mut o, "index", g.index);
+    set(&mut o, "description", g.description.clone());
+    o.insert("lanes".into(), Value::from(lanes));
+    Value::Object(o)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn the_current_turn_rides_along_with_the_guidance() {
-        let mut tag = EventTag::default();
-        let turn = RouteGuidanceManeuverUpdate {
-            display_component_id: None,
-            index: Some(2),
-            maneuver_type: Some(4),
-            after_maneuver_road_name: Some("Elbchaussee".into()),
+    fn turn(index: u16, kind: u8, road: &str) -> RouteGuidanceManeuverUpdate {
+        RouteGuidanceManeuverUpdate {
+            display_component_id: Some(0),
+            index: Some(index),
+            description: None,
+            maneuver_type: Some(kind),
+            after_maneuver_road_name: Some(road.into()),
+            distance_between: None,
+            distance_between_display: None,
+            distance_between_units: None,
             driving_side: None,
             junction_type: None,
-            exit_angle: Some(-90),
-        };
-        assert_eq!(tag.navigation_json(&turn.encode()), None);
+            junction_element_angles: Vec::new(),
+            exit_angle: None,
+            linked_lane_guidance: None,
+            exit_info: None,
+        }
+    }
 
-        let guidance = RouteGuidanceUpdate {
+    fn guidance(current: &[u16], state: u8) -> RouteGuidanceUpdate {
+        RouteGuidanceUpdate {
             display_component_id: None,
-            state: Some(1),
-            maneuver_state: Some(2),
-            current_road_name: Some("Reeperbahn".into()),
+            state: Some(state),
+            maneuver_state: None,
+            current_road_name: None,
             destination_name: None,
             eta: None,
             time_remaining: None,
-            distance_remaining: Some(12000),
-            distance_to_maneuver: Some(350),
-            current_maneuver_list: Some(vec![0, 2]),
-        };
-        let json = tag.navigation_json(&guidance.encode()).unwrap();
-        for part in [
-            "\"status\":1",
-            "\"orderType\":2",
-            "\"roadName\":\"Reeperbahn\"",
-            "\"remainDistance\":350",
-            "\"maneuverType\":4",
-            "\"turnAngle\":-90",
-            "\"afterRoadName\":\"Elbchaussee\"",
-        ] {
-            assert!(json.contains(part), "{json} lacks {part}");
+            distance_remaining: None,
+            distance_remaining_display: None,
+            distance_remaining_units: None,
+            distance_to_maneuver: None,
+            distance_to_maneuver_display: None,
+            distance_to_maneuver_units: None,
+            current_maneuver_list: Some(current.iter().flat_map(|i| i.to_be_bytes()).collect()),
+            maneuver_count: None,
+            visible_in_app: None,
+            lane_guidance_index: None,
+            lane_guidance_count: None,
+            lane_guidance_shown: None,
+            source_name: None,
+            source_supports_route_guidance: None,
+            destination_time_zone_offset_minutes: None,
+        }
+    }
+
+    fn parsed(json: Option<String>) -> serde_json::Value {
+        serde_json::from_str(&json.expect("an event")).unwrap()
+    }
+
+    #[test]
+    fn the_current_turn_rides_along_with_the_guidance() {
+        let mut tag = EventTag::default();
+        let mut exit = turn(2, 4, "Elbchaussee");
+        exit.exit_angle = Some(-90);
+        tag.navigation_json(&exit.encode());
+
+        let mut update = guidance(&[2], 1);
+        update.maneuver_state = Some(2);
+        update.current_road_name = Some("Reeperbahn".into());
+        update.distance_remaining = Some(12000);
+        update.distance_to_maneuver = Some(350);
+        update.distance_to_maneuver_display = Some("350".into());
+        update.distance_to_maneuver_units = Some(2);
+        update.source_name = Some("Maps".into());
+        let v = parsed(tag.navigation_json(&update.encode()));
+        assert_eq!(v["status"], 1);
+        assert_eq!(v["orderType"], 2);
+        assert_eq!(v["roadName"], "Reeperbahn");
+        assert_eq!(v["remainDistance"], 350);
+        assert_eq!(v["remainDistanceDisplay"], "350");
+        assert_eq!(v["remainDistanceUnits"], 2);
+        assert_eq!(v["appName"], "Maps");
+        assert_eq!(v["maneuverType"], 4);
+        assert_eq!(v["turnAngle"], -90);
+        assert_eq!(v["afterRoadName"], "Elbchaussee");
+
+        let mut replaced = turn(2, 4, "Elbchaussee");
+        replaced.maneuver_type = None;
+        replaced.junction_type = Some(1);
+        let v = parsed(tag.navigation_json(&replaced.encode()));
+        assert_eq!(v["junctionType"], 1);
+        assert!(
+            v["maneuverType"].is_null(),
+            "an update replaces the turn: {v}"
+        );
+        assert!(v["turnAngle"].is_null(), "an update replaces the turn: {v}");
+    }
+
+    #[test]
+    fn the_whole_route_is_kept_and_passed_turns_drop_off() {
+        let mut tag = EventTag::default();
+        for (index, kind, road) in [(0, 1, "A"), (1, 2, "B"), (2, 12, "C")] {
+            let mut t = turn(index, kind, road);
+            t.distance_between = Some(100 * u32::from(index));
+            t.junction_element_angles = vec![-90, 45];
+            let v = parsed(tag.navigation_json(&t.encode()));
+            assert_eq!(
+                v["maneuvers"].as_array().unwrap().len(),
+                usize::from(index) + 1
+            );
         }
 
-        let more = RouteGuidanceManeuverUpdate {
-            index: Some(2),
-            maneuver_type: None,
-            junction_type: Some(3),
-            ..turn.clone()
-        };
-        let json = tag.navigation_json(&more.encode()).unwrap();
-        assert!(
-            json.contains("\"junctionType\":3") && json.contains("\"maneuverType\":4"),
-            "{json}"
-        );
+        let v = parsed(tag.navigation_json(&guidance(&[0], 1).encode()));
+        let list = v["maneuvers"].as_array().unwrap();
+        assert_eq!(list.len(), 3);
+        assert_eq!(list[1]["afterRoadName"], "B");
+        assert_eq!(list[2]["distanceBetween"], 200);
+        assert_eq!(list[0]["junctionAngles"], serde_json::json!([-90, 45]));
+        assert_eq!(v["currentManeuvers"], serde_json::json!([0]));
+
+        let v = parsed(tag.navigation_json(&guidance(&[1, 2], 1).encode()));
+        let list = v["maneuvers"].as_array().unwrap();
+        assert_eq!(list.len(), 2);
+        assert_eq!(list[0]["index"], 1);
+        assert_eq!(v["currentManeuvers"], serde_json::json!([1, 2]));
+
+        let mut ended = guidance(&[], 0);
+        ended.current_maneuver_list = None;
+        let v = parsed(tag.navigation_json(&ended.encode()));
+        assert_eq!(v["maneuvers"], serde_json::json!([]));
+        assert!(tag.navigation.maneuvers.is_empty());
     }
+
+    #[test]
+    fn lane_guidance_is_kept_from_the_current_entry_on() {
+        use iap2_csm::messages::route_guidance::LaneInformation;
+
+        let mut tag = EventTag::default();
+        for index in 0..3u16 {
+            let lanes = LaneGuidanceInformation {
+                display_component_id: Some(0),
+                index: Some(index),
+                lanes: vec![
+                    LaneInformation {
+                        index: Some(0),
+                        status: Some(0),
+                        angles: vec![0],
+                        highlight_angle: None,
+                    },
+                    LaneInformation {
+                        index: Some(1),
+                        status: Some(2),
+                        angles: vec![0, 45],
+                        highlight_angle: Some(45),
+                    },
+                ],
+                description: None,
+            };
+            tag.navigation_json(&lanes.encode());
+        }
+        let mut update = guidance(&[0], 1);
+        update.lane_guidance_index = Some(1);
+        update.lane_guidance_shown = Some(true);
+        let v = parsed(tag.navigation_json(&update.encode()));
+        assert_eq!(v["laneGuidanceShown"], true);
+        let lanes = v["laneGuidance"].as_array().unwrap();
+        assert_eq!(lanes.len(), 2);
+        assert_eq!(lanes[0]["index"], 1);
+        assert_eq!(lanes[0]["lanes"][1]["status"], 2);
+        assert_eq!(lanes[0]["lanes"][1]["highlightAngle"], 45);
+    }
+
     use iap2_csm::messages::now_playing::{MediaItemAttributes, PlaybackAttributes};
 
     #[test]

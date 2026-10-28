@@ -226,6 +226,59 @@ pub struct Navigation {
     pub maneuver_distance_text: Option<String>,
     pub destination_distance_text: Option<String>,
     pub time_left_text: Option<String>,
+    pub distance_to_destination_display: Option<String>,
+    pub distance_to_destination_units: Option<u32>,
+    pub remain_distance_display: Option<String>,
+    pub remain_distance_units: Option<u32>,
+    pub maneuver_count: Option<u32>,
+    pub visible_in_app: Option<bool>,
+    pub lane_guidance_index: Option<u32>,
+    pub lane_guidance_count: Option<u32>,
+    pub lane_guidance_shown: Option<bool>,
+    pub source_supports_route_guidance: Option<bool>,
+    pub destination_time_zone_offset_minutes: Option<i32>,
+    #[serde(default)]
+    pub maneuvers: Vec<Maneuver>,
+    #[serde(default)]
+    pub current_maneuvers: Vec<u32>,
+    #[serde(default)]
+    pub lane_guidance: Vec<LaneGuidance>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Maneuver {
+    pub index: u32,
+    pub maneuver_type: Option<u32>,
+    pub turn_side: Option<u32>,
+    pub junction_type: Option<u32>,
+    pub turn_angle: Option<i32>,
+    pub after_road_name: Option<String>,
+    pub description: Option<String>,
+    pub distance_between: Option<u32>,
+    pub distance_between_display: Option<String>,
+    pub distance_between_units: Option<u32>,
+    pub junction_angles: Vec<i32>,
+    pub linked_lane_guidance: Option<u32>,
+    pub exit_info: Option<String>,
+    pub maneuver_text: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct LaneGuidance {
+    pub index: u32,
+    pub description: Option<String>,
+    pub lanes: Vec<Lane>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Lane {
+    pub index: u32,
+    pub status: Option<u32>,
+    pub angles: Vec<i32>,
+    pub highlight_angle: Option<i32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
