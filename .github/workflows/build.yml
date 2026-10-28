@@ -96,6 +96,12 @@ jobs:
         with:
           fetch-depth: 1
           ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || github.event.workflow_run.head_sha }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/assets/gstreamer/*/
+            /assets/gstreamer/*/version.txt
+            /assets/gstreamer/${{ matrix.os == 'macos' && 'macos-arm64' || format('linux-{0}', matrix.arch) }}/
 
       - name: Read version from native/Cargo.toml
         id: pkg
@@ -187,16 +193,11 @@ jobs:
           rustup toolchain install
           rustc --version
 
-      - name: Cache cargo
-        uses: actions/cache@v6
+      - name: Restore cargo cache
+        id: cargo
+        uses: ./.github/actions/cargo-cache/restore
         with:
-          path: |
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/git/db
-            native/target
-          key: cargo-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('native/Cargo.lock', 'native/**/Cargo.toml') }}
-          restore-keys: cargo-${{ matrix.os }}-${{ matrix.arch }}-
+          name: build-${{ matrix.os }}-${{ matrix.arch }}
 
       - name: Build and package [linux]
         if: matrix.os == 'linux'
@@ -224,6 +225,12 @@ jobs:
           name: ${{ format('LIVI-{0}-{1}-{2}.{3}', steps.pkg.outputs.version, matrix.os, matrix.arch, matrix.artifact_ext) }}
           path: dist/*.${{ matrix.artifact_ext }}
           retention-days: 7
+
+      - name: Save cargo cache
+        if: ${{ steps.cargo.outputs.hit != 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev') }}
+        uses: ./.github/actions/cargo-cache/save
+        with:
+          key: ${{ steps.cargo.outputs.key }}
 
       - name: Push badges to version branch
         if: matrix.os == 'linux' && matrix.arch == 'x64' && (env.BUILD_BRANCH == 'main' || env.BUILD_BRANCH == 'dev')

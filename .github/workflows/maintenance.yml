@@ -64,25 +64,27 @@ jobs:
           set -euo pipefail
 
           CACHES="$(gh api -H "Accept: application/vnd.github+json" \
-            "/repos/${GITHUB_REPOSITORY}/actions/caches" \
+            "/repos/${GITHUB_REPOSITORY}/actions/caches?per_page=100" \
             --paginate \
-            --jq '.actions_caches[]
-              | select(.key | startswith("pnpm-store-"))
-              | "\(.id) \(.last_accessed_at) \(.ref) \(.key)"' \
+            --jq '.actions_caches[] | "\(.id) \(.last_accessed_at) \(.ref) \(.key)"' \
             | sort -k2 -r || true)"
 
           if [ -z "${CACHES}" ]; then
             exit 0
           fi
 
-          declare -A KEEP_FOR_REF=()
+          declare -A KEEP=()
 
-          # Newest first, so the first store of each branch survives.
-          while read -r ID _ REF _; do
+          # Newest first, so the newest cache of each family and branch survives.
+          while read -r ID _ REF KEY; do
             [ -n "${ID}" ] || continue
 
-            if [ -z "${KEEP_FOR_REF[${REF}]+x}" ]; then
-              KEEP_FOR_REF["${REF}"]="${ID}"
+            FAMILY="${KEY%-*}"
+            if [[ "${KEY}" == cargo-* ]]; then
+              FAMILY="${FAMILY%-*}"
+            fi
+            if [ -z "${KEEP["${REF} ${FAMILY}"]+x}" ]; then
+              KEEP["${REF} ${FAMILY}"]="${ID}"
               continue
             fi
             gh api -X DELETE -H "Accept: application/vnd.github+json" \
