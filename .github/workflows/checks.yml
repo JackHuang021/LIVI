@@ -144,7 +144,7 @@ jobs:
           cargo test --workspace --locked "${linux_only[@]}"
 
   lint:
-    name: Lint (dprint, actionlint)
+    name: Lint (dprint, actionlint, license headers)
     if: ${{ github.actor != 'github-actions' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -167,3 +167,6 @@ jobs:
           set -euo pipefail
           bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
           ./actionlint -color
+
+      - name: Check the license headers
+        run: sh scripts/spdx-header.sh --check

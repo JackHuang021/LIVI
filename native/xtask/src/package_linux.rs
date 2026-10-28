@@ -82,6 +82,9 @@ pub fn run(arch: Arch) -> Result<(), String> {
     for name in TEMPLATES {
         copy(&linux.join(name), &res.join(name))?;
     }
+    for legal in ["LICENSE", "NOTICE"] {
+        copy(&root.join(legal), &res.join(legal))?;
+    }
     fs::set_permissions(
         res.join("livi-touch-filter"),
         fs::Permissions::from_mode(0o755),

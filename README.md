@@ -402,6 +402,8 @@ _Apple and CarPlay are trademarks of Apple Inc. Android and Android Auto are tra
 
 LIVI is free software, licensed under the **GNU General Public License v3.0 or later** (`GPL-3.0-or-later`). See [LICENSE](LICENSE) for the full text.
 
-Copyright (C) 2025 Lasse Heitgres
+Under section 7(b) of the GPL, [NOTICE](NOTICE) adds one term: works based on LIVI, including ports to other languages, keep the attribution "Based on LIVI by Lasse Heitgres".
+
+Copyright (C) 2025-2026 Lasse Heitgres
 
 You are free to use, study, share, and modify LIVI. If you distribute it or a modified version, you must pass on the same freedoms and make the corresponding source available under the GPL. It comes with NO WARRANTY, to the extent permitted by law.

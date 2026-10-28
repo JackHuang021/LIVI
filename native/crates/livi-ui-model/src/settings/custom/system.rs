@@ -28,6 +28,11 @@ pub fn about(t: &Strings, f: &Facts) -> Vec<Row> {
         info(t.t("settings.name", "Name"), None, or_dash(&f.name)),
         info(t.t("settings.url", "URL"), None, or_dash(&f.homepage)),
         info(
+            t.t("settings.sourceCode", "Source code"),
+            None,
+            or_dash(&f.source),
+        ),
+        info(
             t.t("settings.copyright", "Copyright"),
             None,
             or_dash(&f.copyright),
@@ -36,6 +41,14 @@ pub fn about(t: &Strings, f: &Facts) -> Vec<Row> {
             t.t("settings.license", "License"),
             None,
             or_dash(&f.license),
+        ),
+        info(
+            t.t("settings.warranty", "Warranty"),
+            None,
+            t.t(
+                "settings.noWarranty",
+                "None, to the extent permitted by law",
+            ),
         ),
         mono(t.t("settings.version", "Version"), or_dash(&f.version)),
         mono(t.t("settings.build", "Build"), build),
@@ -340,6 +353,15 @@ mod tests {
 
     fn state(update: Value, nightly: bool) -> Value {
         json!({ "config": { "updateNightly": nightly }, "update": update })
+    }
+
+    #[test]
+    fn about_shows_the_legal_notices() {
+        let rows = about(&Strings::new("en"), &facts());
+        let labels: Vec<&str> = rows.iter().map(|r| r.label.as_str()).collect();
+        for label in ["Source code", "Copyright", "License", "Warranty"] {
+            assert!(labels.contains(&label), "{label} missing");
+        }
     }
 
     #[test]

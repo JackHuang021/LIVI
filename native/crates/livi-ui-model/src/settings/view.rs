@@ -113,6 +113,7 @@ pub struct Dialog {
 pub struct Facts {
     pub name: String,
     pub homepage: String,
+    pub source: String,
     pub copyright: String,
     pub license: String,
     pub version: String,

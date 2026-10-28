@@ -120,6 +120,9 @@ pub fn run(arch: Arch) -> Result<(), String> {
         res.join("livi.icns"),
     )
     .map_err(|e| e.to_string())?;
+    for legal in ["LICENSE", "NOTICE"] {
+        fs::copy(root.join(legal), res.join(legal)).map_err(|e| e.to_string())?;
+    }
 
     fs::write(
         contents.join("Info.plist"),

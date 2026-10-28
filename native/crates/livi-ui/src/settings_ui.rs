@@ -585,14 +585,15 @@ pub fn wire(ui: &AppWindow, client: &Client, lang: &str) {
 }
 
 fn facts() -> Facts {
-    let holder = env!("CARGO_PKG_AUTHORS").replace(':', ", ");
-    let year = option_env!("LIVI_BUILD_DATE")
-        .and_then(|d| d.get(..4))
-        .map_or(String::new(), |y| format!("{y} "));
+    let years = match option_env!("LIVI_BUILD_DATE").and_then(|d| d.get(..4)) {
+        Some(y) if y > "2025" => format!("2025–{y}"),
+        _ => "2025".into(),
+    };
     Facts {
         name: env!("CARGO_PKG_DESCRIPTION").into(),
         homepage: env!("CARGO_PKG_HOMEPAGE").into(),
-        copyright: format!("© {year}{holder}"),
+        source: "https://github.com/f-io/LIVI".into(),
+        copyright: format!("© {years} Lasse Heitgres"),
         license: env!("CARGO_PKG_LICENSE").into(),
         version: env!("CARGO_PKG_VERSION").into(),
         sha: option_env!("LIVI_BUILD_SHA").unwrap_or("dev").into(),
