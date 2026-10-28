@@ -560,6 +560,41 @@ fn gps() -> Node {
     .icon("gps")
 }
 
+const LANGUAGES: [(&str, Label); 32] = [
+    ("cs", Label::plain("Čeština")),
+    ("da", Label::plain("Dansk")),
+    ("de", Label::plain("Deutsch")),
+    ("et", Label::plain("Eesti")),
+    ("en", Label::plain("English")),
+    ("es", Label::plain("Español")),
+    ("fr", Label::plain("Français")),
+    ("ga", Label::plain("Gaeilge")),
+    ("hr", Label::plain("Hrvatski")),
+    ("it", Label::plain("Italiano")),
+    ("lv", Label::plain("Latviešu")),
+    ("lt", Label::plain("Lietuvių")),
+    ("hu", Label::plain("Magyar")),
+    ("mt", Label::plain("Malti")),
+    ("nl", Label::plain("Nederlands")),
+    ("pl", Label::plain("Polski")),
+    ("pt", Label::plain("Português")),
+    ("ro", Label::plain("Română")),
+    ("sk", Label::plain("Slovenčina")),
+    ("sl", Label::plain("Slovenščina")),
+    ("fi", Label::plain("Suomi")),
+    ("sv", Label::plain("Svenska")),
+    ("el", Label::plain("Ελληνικά")),
+    ("bg", Label::plain("Български")),
+    ("ua", Label::plain("Українська")),
+    ("he", Label::native("עברית", *b"Hebr", "Hebrew")),
+    ("ar", Label::native("العربية", *b"Arab", "Arabic")),
+    ("hi", Label::native("हिन्दी", *b"Deva", "Hindi")),
+    ("th", Label::native("ไทย", *b"Thai", "Thai")),
+    ("ja", Label::native("日本語", *b"Hira", "Japanese")),
+    ("zh", Label::native("简体中文", *b"Hani", "Chinese")),
+    ("ko", Label::native("한국어", *b"Hang", "Korean")),
+];
+
 pub fn schema() -> Node {
     Node::route(
         "general",
@@ -599,46 +634,11 @@ pub fn schema() -> Node {
             Node::select(
                 Label::new("settings.language", "Language"),
                 "language",
-                vec![
-                    choice(Label::plain("Dansk"), OptionValue::Text("da")),
-                    choice(Label::plain("Deutsch"), OptionValue::Text("de")),
-                    choice(Label::plain("English"), OptionValue::Text("en")),
-                    choice(Label::plain("Español"), OptionValue::Text("es")),
-                    choice(Label::plain("Français"), OptionValue::Text("fr")),
-                    choice(Label::plain("Polski"), OptionValue::Text("pl")),
-                    choice(Label::plain("Português"), OptionValue::Text("pt")),
-                    choice(Label::plain("Suomi"), OptionValue::Text("fi")),
-                    choice(Label::plain("Svenska"), OptionValue::Text("sv")),
-                    choice(Label::plain("Українська"), OptionValue::Text("ua")),
-                    choice(
-                        Label::native("עברית", *b"Hebr", "Hebrew"),
-                        OptionValue::Text("he"),
-                    ),
-                    choice(
-                        Label::native("العربية", *b"Arab", "Arabic"),
-                        OptionValue::Text("ar"),
-                    ),
-                    choice(
-                        Label::native("हिन्दी", *b"Deva", "Hindi"),
-                        OptionValue::Text("hi"),
-                    ),
-                    choice(
-                        Label::native("ไทย", *b"Thai", "Thai"),
-                        OptionValue::Text("th"),
-                    ),
-                    choice(
-                        Label::native("日本語", *b"Hira", "Japanese"),
-                        OptionValue::Text("ja"),
-                    ),
-                    choice(
-                        Label::native("简体中文", *b"Hani", "Chinese"),
-                        OptionValue::Text("zh"),
-                    ),
-                    choice(
-                        Label::native("한국어", *b"Hang", "Korean"),
-                        OptionValue::Text("ko"),
-                    ),
-                ],
+                LANGUAGES
+                    .iter()
+                    .filter(|(code, _)| crate::i18n::translated(code))
+                    .map(|(code, label)| choice(*label, OptionValue::Text(code)))
+                    .collect(),
             )
             .icon("language")
             .display_value()
@@ -649,4 +649,25 @@ pub fn schema() -> Node {
         ],
     )
     .icon("general")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_listed_language_has_a_locale_and_back() {
+        for (code, _) in LANGUAGES {
+            assert!(
+                crate::i18n::LOCALES.iter().any(|(c, _)| *c == code),
+                "{code} has no locale file"
+            );
+        }
+        for (code, _) in crate::i18n::LOCALES {
+            assert!(
+                LANGUAGES.iter().any(|(c, _)| *c == code),
+                "{code} is not in the language list"
+            );
+        }
+    }
 }

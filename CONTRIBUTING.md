@@ -23,6 +23,12 @@ I have read the CLA Document and I hereby sign the CLA
 
 The `CLA` check records the signature and turns green once everyone has signed. Commits need an author email that is linked to a GitHub account, and `Co-authored-by` trailers have to use the co-author's GitHub email. If `CLA.md` changes, it has to be accepted again. If you contribute on behalf of an employer or another legal entity, contact hello@f-io.dev first.
 
+## Translations
+
+Each language is one file in `native/crates/livi-i18n/locales/`. Start from a copy of `en.json` and translate every entry, including the `navigation` section. Keep placeholders such as `{{n}}` as they are. A file is either empty or complete. A language shows up in the language list once its file is filled.
+
+Please, only translate into a language you speak natively or fluently.
+
 ## Pull requests
 
 - Target `main`, one topic per pull request.
