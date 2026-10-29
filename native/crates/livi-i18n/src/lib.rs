@@ -8,39 +8,39 @@ use serde_json::Value;
 
 const EN: &str = include_str!("../locales/en.json");
 
-pub const LOCALES: [(&str, &str); 32] = [
-    ("en", EN),
-    ("ar", include_str!("../locales/ar.json")),
-    ("bg", include_str!("../locales/bg.json")),
-    ("cs", include_str!("../locales/cs.json")),
-    ("da", include_str!("../locales/da.json")),
-    ("de", include_str!("../locales/de.json")),
-    ("el", include_str!("../locales/el.json")),
-    ("es", include_str!("../locales/es.json")),
-    ("et", include_str!("../locales/et.json")),
-    ("fi", include_str!("../locales/fi.json")),
-    ("fr", include_str!("../locales/fr.json")),
-    ("ga", include_str!("../locales/ga.json")),
-    ("he", include_str!("../locales/he.json")),
-    ("hi", include_str!("../locales/hi.json")),
-    ("hr", include_str!("../locales/hr.json")),
-    ("hu", include_str!("../locales/hu.json")),
-    ("it", include_str!("../locales/it.json")),
-    ("ja", include_str!("../locales/ja.json")),
-    ("ko", include_str!("../locales/ko.json")),
-    ("lt", include_str!("../locales/lt.json")),
-    ("lv", include_str!("../locales/lv.json")),
-    ("mt", include_str!("../locales/mt.json")),
-    ("nl", include_str!("../locales/nl.json")),
-    ("pl", include_str!("../locales/pl.json")),
-    ("pt", include_str!("../locales/pt.json")),
-    ("ro", include_str!("../locales/ro.json")),
-    ("sk", include_str!("../locales/sk.json")),
-    ("sl", include_str!("../locales/sl.json")),
-    ("sv", include_str!("../locales/sv.json")),
-    ("th", include_str!("../locales/th.json")),
-    ("ua", include_str!("../locales/ua.json")),
-    ("zh", include_str!("../locales/zh.json")),
+pub const LOCALES: [(&str, Option<[u8; 4]>, &str); 32] = [
+    ("cs", None, include_str!("../locales/cs.json")),
+    ("da", None, include_str!("../locales/da.json")),
+    ("de", None, include_str!("../locales/de.json")),
+    ("et", None, include_str!("../locales/et.json")),
+    ("en", None, EN),
+    ("es", None, include_str!("../locales/es.json")),
+    ("fr", None, include_str!("../locales/fr.json")),
+    ("ga", None, include_str!("../locales/ga.json")),
+    ("hr", None, include_str!("../locales/hr.json")),
+    ("it", None, include_str!("../locales/it.json")),
+    ("lv", None, include_str!("../locales/lv.json")),
+    ("lt", None, include_str!("../locales/lt.json")),
+    ("hu", None, include_str!("../locales/hu.json")),
+    ("mt", None, include_str!("../locales/mt.json")),
+    ("nl", None, include_str!("../locales/nl.json")),
+    ("pl", None, include_str!("../locales/pl.json")),
+    ("pt", None, include_str!("../locales/pt.json")),
+    ("ro", None, include_str!("../locales/ro.json")),
+    ("sk", None, include_str!("../locales/sk.json")),
+    ("sl", None, include_str!("../locales/sl.json")),
+    ("fi", None, include_str!("../locales/fi.json")),
+    ("sv", None, include_str!("../locales/sv.json")),
+    ("el", None, include_str!("../locales/el.json")),
+    ("bg", None, include_str!("../locales/bg.json")),
+    ("uk", None, include_str!("../locales/uk.json")),
+    ("he", Some(*b"Hebr"), include_str!("../locales/he.json")),
+    ("ar", Some(*b"Arab"), include_str!("../locales/ar.json")),
+    ("hi", Some(*b"Deva"), include_str!("../locales/hi.json")),
+    ("th", Some(*b"Thai"), include_str!("../locales/th.json")),
+    ("ja", Some(*b"Hira"), include_str!("../locales/ja.json")),
+    ("zh", Some(*b"Hani"), include_str!("../locales/zh.json")),
+    ("ko", Some(*b"Hang"), include_str!("../locales/ko.json")),
 ];
 
 pub struct Strings {
@@ -77,24 +77,12 @@ fn table(json: &str) -> HashMap<String, String> {
     out
 }
 
-fn code(lang: &str) -> &str {
-    if matches!(lang, "zh" | "zh-CN" | "zh-Hans" | "zh-SG") {
-        return "zh";
-    }
-    match lang.split(['-', '_']).next().unwrap_or("en") {
-        "zh" => "en",
-        "uk" => "ua",
-        "iw" => "he",
-        other => other,
-    }
+fn locale(lang: &str) -> Option<&'static (&'static str, Option<[u8; 4]>, &'static str)> {
+    LOCALES.iter().find(|(c, _, _)| *c == lang)
 }
 
 fn source(lang: &str) -> &'static str {
-    let code = code(lang);
-    LOCALES
-        .iter()
-        .find(|(c, _)| *c == code)
-        .map_or(EN, |(_, json)| json)
+    locale(lang).map_or(EN, |(_, _, json)| json)
 }
 
 pub fn translated(lang: &str) -> bool {
@@ -102,18 +90,7 @@ pub fn translated(lang: &str) -> bool {
 }
 
 pub fn script(lang: &str) -> Option<[u8; 4]> {
-    if matches!(lang, "zh" | "zh-CN" | "zh-Hans" | "zh-SG") {
-        return Some(*b"Hani");
-    }
-    match lang.split(['-', '_']).next().unwrap_or("en") {
-        "ja" => Some(*b"Hira"),
-        "ko" => Some(*b"Hang"),
-        "ar" => Some(*b"Arab"),
-        "he" | "iw" => Some(*b"Hebr"),
-        "th" => Some(*b"Thai"),
-        "hi" => Some(*b"Deva"),
-        _ => None,
-    }
+    locale(lang).and_then(|(_, script, _)| *script)
 }
 
 impl Strings {
@@ -190,33 +167,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn nested_keys_resolve_with_english_fallback() {
-        let de = Strings::new("de");
-        assert_eq!(de.t("settings.audio", "x"), "Audio");
-        assert_eq!(de.t("settings.devices", "x"), "Geräte");
-        assert_eq!(de.t("no.such.key", "Fallback"), "Fallback");
-    }
-
-    #[test]
-    fn region_codes_pick_the_language() {
-        assert_eq!(
-            Strings::new("uk-UA").t("settings.audio", "x"),
-            Strings::new("ua").t("settings.audio", "x")
-        );
-    }
-
-    #[test]
-    fn untranslated_languages_fall_back_to_english() {
+    fn nested_keys_resolve_with_a_fallback() {
         let en = Strings::new("en");
-        for lang in [
-            "zh", "zh-CN", "zh-Hans", "zh-TW", "zh-Hant", "ja", "ko", "ar", "he", "th", "hi", "es",
-            "pt", "pl", "da", "sv", "fi",
-        ] {
-            assert_eq!(
-                Strings::new(lang).t("settings.audio", "x"),
-                en.t("settings.audio", "x")
-            );
-        }
+        assert_eq!(en.t("settings.audio", "x"), "Audio");
+        assert_eq!(en.t("no.such.key", "Fallback"), "Fallback");
     }
 
     #[test]
@@ -230,7 +184,7 @@ mod tests {
         );
         assert!(Strings::readable("ja", &[*b"Hira"]).shows(*b"Hira"));
         assert!(Strings::new("de").shows(*b"Arab"));
-        assert_eq!(script("zh-TW"), None);
+        assert_eq!(script("de"), None);
         assert_eq!(script("he"), Some(*b"Hebr"));
     }
 
@@ -247,7 +201,7 @@ mod tests {
     #[test]
     fn every_locale_is_empty_or_complete() {
         let en = table(EN);
-        for (name, json) in LOCALES {
+        for (name, _, json) in LOCALES {
             assert!(
                 serde_json::from_str::<Value>(json).is_ok(),
                 "{name}.json is not valid JSON"
@@ -280,10 +234,9 @@ mod tests {
 
     #[test]
     fn only_filled_locales_count_as_translated() {
-        assert!(translated("en"));
-        assert!(translated("de"));
-        assert!(translated("uk-UA"));
-        assert!(!translated("it"));
+        for (name, _, json) in LOCALES {
+            assert_eq!(translated(name), !table(json).is_empty(), "{name}");
+        }
     }
 
     #[test]

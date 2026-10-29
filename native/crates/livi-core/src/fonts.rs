@@ -18,7 +18,7 @@ struct Source {
 }
 
 struct Font {
-    languages: &'static [&'static str],
+    script: [u8; 4],
     #[cfg_attr(target_os = "macos", expect(dead_code))]
     fontconfig: &'static str,
     probe: char,
@@ -28,7 +28,7 @@ struct Font {
 
 const FONTS: [Font; 7] = [
     Font {
-        languages: &["zh", "zh-CN", "zh-Hans", "zh-SG"],
+        script: *b"Hani",
         fontconfig: "zh-cn",
         probe: '中',
         file: "NotoSansSC.ttf",
@@ -44,7 +44,7 @@ const FONTS: [Font; 7] = [
         ],
     },
     Font {
-        languages: &["ja", "ja-JP"],
+        script: *b"Hira",
         fontconfig: "ja",
         probe: 'あ',
         file: "NotoSansJP.ttf",
@@ -60,7 +60,7 @@ const FONTS: [Font; 7] = [
         ],
     },
     Font {
-        languages: &["ko", "ko-KR"],
+        script: *b"Hang",
         fontconfig: "ko",
         probe: '한',
         file: "NotoSansKR.ttf",
@@ -76,7 +76,7 @@ const FONTS: [Font; 7] = [
         ],
     },
     Font {
-        languages: &["ar", "fa", "ur"],
+        script: *b"Arab",
         fontconfig: "ar",
         probe: 'ع',
         file: "NotoSansArabic.ttf",
@@ -92,7 +92,7 @@ const FONTS: [Font; 7] = [
         ],
     },
     Font {
-        languages: &["he", "iw"],
+        script: *b"Hebr",
         fontconfig: "he",
         probe: 'א',
         file: "NotoSansHebrew.ttf",
@@ -108,7 +108,7 @@ const FONTS: [Font; 7] = [
         ],
     },
     Font {
-        languages: &["th"],
+        script: *b"Thai",
         fontconfig: "th",
         probe: 'ก',
         file: "NotoSansThai.ttf",
@@ -124,7 +124,7 @@ const FONTS: [Font; 7] = [
         ],
     },
     Font {
-        languages: &["hi", "mr", "ne"],
+        script: *b"Deva",
         fontconfig: "hi",
         probe: 'क',
         file: "NotoSansDevanagari.ttf",
@@ -144,7 +144,8 @@ const USER_AGENT: &str = "LIVI";
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 
 fn font_for(language: &str) -> Option<&'static Font> {
-    FONTS.iter().find(|f| f.languages.contains(&language))
+    let script = livi_i18n::script(language)?;
+    FONTS.iter().find(|f| f.script == script)
 }
 
 fn is_font(path: &Path) -> bool {
@@ -283,12 +284,10 @@ mod tests {
     use crate::config_file::tests::TempDir;
 
     #[test]
-    fn each_language_finds_its_font() {
-        assert_eq!(font_for("zh").map(|f| f.file), Some("NotoSansSC.ttf"));
-        assert_eq!(font_for("zh-CN").map(|f| f.file), Some("NotoSansSC.ttf"));
-        assert_eq!(font_for("fa").map(|f| f.file), Some("NotoSansArabic.ttf"));
-        assert!(font_for("zh-TW").is_none());
-        assert!(font_for("de").is_none());
+    fn every_script_has_a_font() {
+        for (code, script, _) in livi_i18n::LOCALES {
+            assert_eq!(font_for(code).is_some(), script.is_some(), "{code}");
+        }
     }
 
     #[test]
