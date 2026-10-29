@@ -177,10 +177,8 @@ mod tests {
             maneuver(30, Language::of("de")).as_deref(),
             Some("Ausfahrt 3")
         );
-        assert_eq!(
-            maneuver(30, Language::of("zh")).as_deref(),
-            Some("Roundabout exit 3")
-        );
+        assert_eq!(maneuver(30, Language::of("zh")).as_deref(), Some("第3出"));
+        assert_eq!(no_route(Language::of("zh")), "无路线");
         assert_eq!(maneuver(54, Language::of("en")), None);
         assert_eq!(
             maneuver(40, Language::of("en")).as_deref(),

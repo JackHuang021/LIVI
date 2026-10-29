@@ -209,8 +209,8 @@ mod tests {
     fn untranslated_languages_fall_back_to_english() {
         let en = Strings::new("en");
         for lang in [
-            "zh", "zh-CN", "zh-Hans", "zh-TW", "zh-Hant", "ja", "ko", "ar", "he", "th", "hi", "es",
-            "pt", "pl", "da", "sv", "fi",
+            "zh-TW", "zh-Hant", "ja", "ko", "ar", "he", "th", "hi", "es", "pt", "pl", "da", "sv",
+            "fi",
         ] {
             assert_eq!(
                 Strings::new(lang).t("settings.audio", "x"),
@@ -283,6 +283,8 @@ mod tests {
         assert!(translated("en"));
         assert!(translated("de"));
         assert!(translated("uk-UA"));
+        assert!(translated("zh"));
+        assert!(translated("zh-CN"));
         assert!(!translated("it"));
     }
 
