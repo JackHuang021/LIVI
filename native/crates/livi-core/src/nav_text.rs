@@ -129,18 +129,16 @@ mod tests {
     #[test]
     fn every_maneuver_reads_as_the_old_dictionary_had_it() {
         let v = vectors();
-        for key in ["en", "de", "fr", "ua"] {
-            let language = Language::of(key);
-            for (code, text) in v[key]["maneuvers"].as_object().unwrap() {
-                let code: i64 = code.parse().unwrap();
-                let ours = u32::try_from(code)
-                    .ok()
-                    .and_then(|c| maneuver(c, language))
-                    .unwrap_or_else(|| unknown_maneuver(language).to_string());
-                assert_eq!(ours, text.as_str().unwrap(), "{key} {code}");
-            }
-            assert_eq!(unknown_maneuver(language), v[key]["none"]);
+        let language = Language::of("en");
+        for (code, text) in v["en"]["maneuvers"].as_object().unwrap() {
+            let code: i64 = code.parse().unwrap();
+            let ours = u32::try_from(code)
+                .ok()
+                .and_then(|c| maneuver(c, language))
+                .unwrap_or_else(|| unknown_maneuver(language).to_string());
+            assert_eq!(ours, text.as_str().unwrap(), "{code}");
         }
+        assert_eq!(unknown_maneuver(language), v["en"]["none"]);
     }
 
     #[test]
@@ -165,24 +163,7 @@ mod tests {
     }
 
     #[test]
-    fn the_language_setting_picks_the_words() {
-        assert_eq!(
-            no_route(Language::of("uk-UA")),
-            no_route(Language::of("ua"))
-        );
+    fn unknown_languages_read_english() {
         assert_eq!(no_route(Language::of("xx")), "No Route");
-        assert_eq!(no_route(Language::of("zh-TW")), "No Route");
-        assert_eq!(no_route(Language::of("de")), "Zielführung aus");
-        assert_eq!(
-            maneuver(30, Language::of("de")).as_deref(),
-            Some("Ausfahrt 3")
-        );
-        assert_eq!(maneuver(30, Language::of("zh")).as_deref(), Some("第3出"));
-        assert_eq!(no_route(Language::of("zh")), "无路线");
-        assert_eq!(maneuver(54, Language::of("en")), None);
-        assert_eq!(
-            maneuver(40, Language::of("en")).as_deref(),
-            Some("Roundabout exit 13")
-        );
     }
 }

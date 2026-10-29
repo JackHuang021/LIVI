@@ -26,11 +26,11 @@ impl Label {
         }
     }
 
-    pub const fn native(text: &'static str, script: [u8; 4], latin: &'static str) -> Self {
+    pub fn native(text: &'static str, script: Option<[u8; 4]>, latin: &'static str) -> Self {
         Self {
             key: None,
             text,
-            unreadable: Some((script, latin)),
+            unreadable: script.map(|s| (s, latin)),
         }
     }
 }
